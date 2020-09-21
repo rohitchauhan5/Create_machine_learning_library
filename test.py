@@ -1,11 +1,6 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# In[1849]:
-
 # -*- coding: utf-8 -*-
 """
-Created on Thu Aug 13 19:12:48 2020
+Created on Sat Sep  5 20:36:16 2020
 
 @author: consultant138
 """
@@ -44,33 +39,26 @@ from sklearn.feature_extraction.text import CountVectorizer
 import xgboost as xgb
 from sklearn.preprocessing import LabelEncoder
 
-from fuzzywuzzy import fuzz
-import random
-import decimal
 # In[2]:
 
 
 cols = ['Currency','Account Type','Accounting Net Amount',
 #'Accounting Net Amount Difference','Accounting Net Amount Difference Absolute ',
-#'Activity Code',
-'Task ID', 'Source Combination Code',
-'Age','Age WK',
-'Asset Type Category','Base Currency','Base Net Amount',
-'B-P Net Amount',
+'Activity Code','Age','Age WK',
+'Asset Type Category','Base Currency','Base Net Amount','Bloomberg_Yellow_Key',
+'Cust Net Amount',
 #'B-P Net Amount Difference','B-P Net Amount Difference Absolute',
 'BreakID',
 'Business Date','Cancel Amount','Cancel Flag','CUSIP','Custodian',
 'Custodian Account',
 'Derived Source','Description','Department','ExpiryDate','ExternalComment1','ExternalComment2',
-'ExternalComment3','Fund',
-#'Interest Amount',
-'InternalComment1','InternalComment2',
+'ExternalComment3','Fund','FX Rate','Interest Amount','InternalComment1','InternalComment2',
 'InternalComment3','Investment Type','Is Combined Data','ISIN','Keys',
 'Mapped Custodian Account','Net Amount Difference','Net Amount Difference Absolute','Non Trade Description',
-#'OTE Custodian Account',
+'OTE Custodian Account',
 #'Predicted Action','Predicted Status','Prediction Details',
 'Price','Prime Broker',
-'Quantity','SEDOL','Settle Date','SPM ID','Status',
+'Quantity','SEDOL','Settle Date','SPM ID','Status','Strike Price',
 'System Comments','Ticker','Trade Date','Trade Expenses','Transaction Category','Transaction ID','Transaction Type',
 'Underlying Cusip','Underlying Investment ID','Underlying ISIN','Underlying Sedol','Underlying Ticker','Source Combination','_ID']
 #'UnMapped']
@@ -85,7 +73,6 @@ add = ['ViewData.Side0_UniqueIds', 'ViewData.Side1_UniqueIds',
 
 new_cols = ['ViewData.' + x for x in cols] + add
 
-
 common_cols = ['ViewData.Accounting Net Amount', 'ViewData.Age',
 'ViewData.Age WK', 'ViewData.Asset Type Category',
 'ViewData.B-P Net Amount', 'ViewData.Base Net Amount','ViewData.CUSIP', 
@@ -94,9 +81,7 @@ common_cols = ['ViewData.Accounting Net Amount', 'ViewData.Age',
 #'ViewData.Commission',
         'ViewData.Currency', 'ViewData.Custodian',
        'ViewData.Custodian Account',
-       'ViewData.Description','ViewData.Department', 
-              # 'ViewData.ExpiryDate', 
-               'ViewData.Fund',
+       'ViewData.Description','ViewData.Department', 'ViewData.ExpiryDate', 'ViewData.Fund',
        'ViewData.ISIN',
        'ViewData.Investment Type',
       # 'ViewData.Keys',
@@ -117,108 +102,80 @@ common_cols = ['ViewData.Accounting Net Amount', 'ViewData.Age',
        'ViewData.Underlying Sedol','filter_key','ViewData.Status','ViewData.BreakID',
               'ViewData.Side0_UniqueIds','ViewData.Side1_UniqueIds','ViewData._ID']
 
-model_cols = ['SideA.ViewData.B-P Net Amount', 
+model_cols = [
+            'SideA.ViewData.B-P Net Amount', 
               #'SideA.ViewData.Cancel Flag', 
-             # 'SideA.new_desc_cat',
-              #'SideA.ViewData.Description',
-            # 'SideA.ViewData.Investment Type', 
-              #'SideA.ViewData.Asset Type Category', 
+              #'SideA.new_desc_cat',
+             # 'SideA.ViewData.Description',
+             # 'SideA.ViewData.Department',
+   
+    
               
+             # 'SideA.ViewData.Price',
+             # 'SideA.ViewData.Quantity',
+             #'SideA.ViewData.Investment Type', 
+              #'SideA.ViewData.Asset Type Category', 
               'SideB.ViewData.Accounting Net Amount', 
               #'SideB.ViewData.Cancel Flag', 
-              #'SideB.ViewData.Description',
-             # 'SideB.new_desc_cat',
-             # 'SideB.ViewData.Investment Type', 
-              #'SideB.ViewData.Asset Type Category', 
-              'Trade_Date_match', 'Settle_Date_match', 
-            'Amount_diff_2', 
-              'Trade_date_diff', 
-            'Settle_date_diff', 'SideA.ISIN_NA', 'SideB.ISIN_NA', 
-             'ViewData.Combined Fund',
-              'ViewData.Combined Transaction Type', 'Combined_Investment_Type','Combined_Asset_Type_Category',
-              'Combined_Desc',
-             # 'ViewData.Combined Investment Type',
-             # 'SideA.TType', 'SideB.TType',
-              'abs_amount_flag', 'tt_map_flag', 'description_similarity_score',
-              'SideB.Date','SideA.ViewData.Settle Date','SideB.ViewData.Settle Date',
-              'All_key_nan','new_key_match', 'new_pb1','Combined_TType',
-              #'SideB.Date',
-                 'SideA.ViewData._ID', 'SideB.ViewData._ID','SideB.ViewData.Side0_UniqueIds', 'SideA.ViewData.Side1_UniqueIds',          
-              'SideB.ViewData.Status', 'SideB.ViewData.BreakID_B_side',
-              'SideA.ViewData.Status', 'SideA.ViewData.BreakID_A_side']
-
-
-model_cols_2 =[
-    #'SideA.ViewData.B-P Net Amount', 
-              #'SideA.ViewData.Cancel Flag', 
-             # 'SideA.new_desc_cat',
-              #'SideA.ViewData.Description',
-            # 'SideA.ViewData.Investment Type', 
-              #'SideA.ViewData.Asset Type Category', 
+             # 'SideB.ViewData.Description',
+              # 'SideB.ViewData.Department',
               
-             # 'SideB.ViewData.Accounting Net Amount', 
-              #'SideB.ViewData.Cancel Flag', 
-              #'SideB.ViewData.Description',
+             # 'SideB.ViewData.Price',
+             # 'SideB.ViewData.Quantity',
              # 'SideB.new_desc_cat',
              # 'SideB.ViewData.Investment Type', 
               #'SideB.ViewData.Asset Type Category', 
               'Trade_Date_match', 'Settle_Date_match', 
-           # 'Amount_diff_2', 
-              'Trade_date_diff', 
-            'Settle_date_diff', 'SideA.ISIN_NA', 'SideB.ISIN_NA', 
-             'ViewData.Combined Fund',
-              'ViewData.Combined Transaction Type', 'Combined_Investment_Type','Combined_Asset_Type_Category',
-              'Combined_Desc',
-             # 'ViewData.Combined Investment Type',
-             # 'SideA.TType', 'SideB.TType',
-              'abs_amount_flag', 'tt_map_flag', 'description_similarity_score',
+                'Amount_diff_2', 
+              'Trade_date_diff', 'Settle_date_diff', 'SideA.ISIN_NA', 'SideB.ISIN_NA', 
+             # 'ViewData.Combined Fund',
+              'ViewData.Combined Transaction Type', 'Combined_Desc','Combined_TType',
+             # 'SideA.TType', 'SideB.TType', 
+              'abs_amount_flag',
+    'tt_map_flag', 
+              'All_key_nan','new_key_match', 'new_pb1',
               'SideB.Date','SideA.ViewData.Settle Date','SideB.ViewData.Settle Date',
-              'All_key_nan','new_key_match', 'new_pb1','Combined_TType',
-              #'SideB.Date',
-                 'SideA.ViewData._ID', 'SideB.ViewData._ID','SideB.ViewData.Side0_UniqueIds', 'SideA.ViewData.Side1_UniqueIds',          
+            'SideA.ViewData._ID', 'SideB.ViewData._ID','SideB.ViewData.Side0_UniqueIds', 'SideA.ViewData.Side1_UniqueIds',
               'SideB.ViewData.Status', 'SideB.ViewData.BreakID_B_side',
-              'SideA.ViewData.Status', 'SideA.ViewData.BreakID_A_side']
-             # 'label']
+              'SideA.ViewData.Status', 'SideA.ViewData.BreakID_A_side'] 
+              #'label']
 
-trade_types_A = ['buy', 'sell', 'covershort','sellshort',
-       'fx', 'fx settlement', 'sell short',
-       'trade not to be reported_buy', 'covershort','ptbl','ptss', 'ptcs', 'ptcl']
-trade_types_B = ['trade not to be reported_buy','buy', 'sellshort', 'sell', 'covershort',
-       'spotfx', 'forwardfx',
-       'trade not to be reported_sell',
-       'trade not to be reported_sellshort',
-       'trade not to be reported_covershort']
-
-model_cols = ['SideA.ViewData.B-P Net Amount', 
+model_cols_2 =[#'SideA.ViewData.B-P Net Amount', 
               #'SideA.ViewData.Cancel Flag', 
-             # 'SideA.new_desc_cat',
-              #'SideA.ViewData.Description',
-            # 'SideA.ViewData.Investment Type', 
-              #'SideA.ViewData.Asset Type Category', 
+              #'SideA.new_desc_cat',
+             # 'SideA.ViewData.Description',
+             # 'SideA.ViewData.Department',
+   
+    
               
-              'SideB.ViewData.Accounting Net Amount', 
+             # 'SideA.ViewData.Price',
+             # 'SideA.ViewData.Quantity',
+             #'SideA.ViewData.Investment Type', 
+              #'SideA.ViewData.Asset Type Category', 
+              #'SideB.ViewData.Accounting Net Amount', 
               #'SideB.ViewData.Cancel Flag', 
-              #'SideB.ViewData.Description',
+             # 'SideB.ViewData.Description',
+              # 'SideB.ViewData.Department',
+              
+             # 'SideB.ViewData.Price',
+             # 'SideB.ViewData.Quantity',
              # 'SideB.new_desc_cat',
              # 'SideB.ViewData.Investment Type', 
               #'SideB.ViewData.Asset Type Category', 
               'Trade_Date_match', 'Settle_Date_match', 
-            'Amount_diff_2', 
-              'Trade_date_diff', 
-            'Settle_date_diff', 'SideA.ISIN_NA', 'SideB.ISIN_NA', 
-             'ViewData.Combined Fund',
-              'ViewData.Combined Transaction Type', 'Combined_Investment_Type','Combined_Asset_Type_Category',
-              'Combined_Desc',
-             # 'ViewData.Combined Investment Type',
-             # 'SideA.TType', 'SideB.TType',
-              'abs_amount_flag', 'tt_map_flag', 'description_similarity_score',
+              #  'Amount_diff_2', 
+              'Trade_date_diff', 'Settle_date_diff', 'SideA.ISIN_NA', 'SideB.ISIN_NA', 
+             # 'ViewData.Combined Fund',
+              'ViewData.Combined Transaction Type', 'Combined_Desc','Combined_TType',
+             # 'SideA.TType', 'SideB.TType', 
+              'abs_amount_flag',
+    'tt_map_flag', 
+              'All_key_nan','new_key_match', 'new_pb1',
               'SideB.Date','SideA.ViewData.Settle Date','SideB.ViewData.Settle Date',
-              'All_key_nan','new_key_match', 'new_pb1','Combined_TType',
-              #'SideB.Date',
-                 'SideA.ViewData._ID', 'SideB.ViewData._ID','SideB.ViewData.Side0_UniqueIds', 'SideA.ViewData.Side1_UniqueIds',          
+            'SideA.ViewData._ID', 'SideB.ViewData._ID','SideB.ViewData.Side0_UniqueIds', 'SideA.ViewData.Side1_UniqueIds',
               'SideB.ViewData.Status', 'SideB.ViewData.BreakID_B_side',
-              'SideA.ViewData.Status', 'SideA.ViewData.BreakID_A_side']
-             # 'label']
+              'SideA.ViewData.Status', 'SideA.ViewData.BreakID_A_side'] 
+              #'label']
 
 #### Closed break functions - Begin #### 
 
@@ -249,23 +206,6 @@ def normalize_bp_acct_col_names(fun_df):
     fun_df.rename(columns = bp_acct_col_names_mapping_dict, inplace = True)
     return(fun_df)
 
-# In[3]:
-
-
-pd.set_option('display.max_columns',500)
-pd.set_option('display.max_rows',500)
-
-
-# In[4]:
-
-
-pd.options.display.max_colwidth = 1000
-
-
-# In[5]:
-
-
-pd.options.display.float_format = '{:.5f}'.format
 
 
 # M X M and N X N architecture for closed break prediction
@@ -369,29 +309,9 @@ def identifying_closed_breaks_from_Trans_type(fun_side, fun_transaction_type_lis
         print('For Prime Broker side, the options are PB or BP or B-P or Prime Broker')
         print('For Accounting side, the options are Acct or Accounting')
         raise ValueError('Exiting function because fun_side argument was not from the accepted set of parameter values')        
-
-    if(fun_setup_code_crucial == '153'):
-        Transaction_type_closed_break_df = \
-            fun_side_meo_combination_df[ \
-                    (fun_side_meo_combination_df['ViewData.Transaction Type_x'].astype(str).isin(fun_transaction_type_list)) & \
-                    (fun_side_meo_combination_df['ViewData.Transaction Type_y'].astype(str).isin(fun_transaction_type_list)) & \
-                    (abs(fun_side_meo_combination_df[Net_amount_col_name_list[0]]).astype(str) == abs(fun_side_meo_combination_df[Net_amount_col_name_list[1]]).astype(str)) & \
-                    (fun_side_meo_combination_df[Side_0_1_UniqueIds_col_name_list[0]].astype(str) != fun_side_meo_combination_df[Side_0_1_UniqueIds_col_name_list[1]].astype(str)) \
-                                        ]
-        
-        if(fun_transaction_type_list == ['JNL'] or fun_transaction_type_list == ['MTM']):
-            Transaction_type_closed_break_df = \
-                Transaction_type_closed_break_df[ \
-                        (Transaction_type_closed_break_df['ViewData.Custodian_x'].astype(str) == 'CS') & \
-                        (Transaction_type_closed_break_df['ViewData.Custodian_y'].astype(str) == 'CS') \
-                                            ]
-            if(fun_transaction_type_list == ['JNL']):
-                Transaction_type_closed_break_df = \
-                    Transaction_type_closed_break_df[ \
-                            (Transaction_type_closed_break_df['ViewData.Transaction ID_x'].astype(str) == Transaction_type_closed_break_df['ViewData.Transaction ID_y'].astype(str)) \
-                                                ]
-
     
+    if(fun_setup_code_crucial == '379'):
+        Transaction_type_closed_break_df =             fun_side_meo_combination_df[                     (fun_side_meo_combination_df['ViewData.Transaction Type_x'].astype(str).isin(fun_transaction_type_list)) &                     (fun_side_meo_combination_df['ViewData.Transaction Type_y'].astype(str).isin(fun_transaction_type_list)) &                     (abs(fun_side_meo_combination_df[Net_amount_col_name_list[0]]).astype(str) == abs(fun_side_meo_combination_df[Net_amount_col_name_list[1]]).astype(str)) &                     (fun_side_meo_combination_df[Side_0_1_UniqueIds_col_name_list[0]].astype(str) != fun_side_meo_combination_df[Side_0_1_UniqueIds_col_name_list[1]].astype(str))                     ]
     return(set(
                 Transaction_type_closed_break_df['ViewData.Side0_UniqueIds_x'].astype(str) + \
                 Transaction_type_closed_break_df['ViewData.Side1_UniqueIds_x'].astype(str)
@@ -448,33 +368,75 @@ def closed_daily_run(fun_setup_code,
 
 #    main_aua = cleaned_aua(fun_filepath_aua = fun_main_filepath_aua)
     
-    if(fun_setup_code == '153'):
+    if(fun_setup_code == '379'):
         Transaction_Type_dict = {
-                                 'JNL' : {'side' : 'PB',
-                                           'Transaction_Type' : ['JNL'],
+                                'Interest BP_side' : {'side' : 'PB',
+                                           'Transaction_Type' : ['Interest'],
                                            'Side_meo_training_df' : BP_meo_training_df},
-                                 'MTM' : {'side' : 'PB',
-                                          'Transaction_Type' : ['MTM'],
-                                           'Side_meo_training_df' : BP_meo_training_df },
-                                 'Collateral' : {'side' : 'PB',
-                                          'Transaction_Type' : ['Collateral'],
-                                           'Side_meo_training_df' : BP_meo_training_df },
-                                 'DEB_CRED' : {'side' : 'PB',
-                                          'Transaction_Type' : ['DEB','CRED'],
-                                           'Side_meo_training_df' : BP_meo_training_df },
-                                 'DEP_WDRL' : {'side' : 'PB',
-                                          'Transaction_Type' : ['DEP','WDRL'],
-                                           'Side_meo_training_df' : BP_meo_training_df },
-                                 'Miscellaneous' : {'side' : 'PB',
-                                          'Transaction_Type' : ['Miscellaneous'],
-                                           'Side_meo_training_df' : BP_meo_training_df },
-                                 'REORG' : {'side' : 'PB',
-                                          'Transaction_Type' : ['REORG'],
-                                           'Side_meo_training_df' : BP_meo_training_df },
-                                 'Transfer' : {'side' : 'Acct',
-                                          'Transaction_Type' : ['Transfer'],
-                                           'Side_meo_training_df' : Acct_meo_training_df }
-                                 }
+                                'Interest Acct_side' : {'side' : 'Acct',
+                                           'Transaction_Type' : ['Interest'],
+                                           'Side_meo_training_df' : Acct_meo_training_df},
+                                'STIF Interest BP_side' : {'side' : 'PB',
+                                           'Transaction_Type' : ['STIF Interest'],
+                                           'Side_meo_training_df' : BP_meo_training_df},
+                                'STIF Interest Acct_side' : {'side' : 'Acct',
+                                           'Transaction_Type' : ['STIF Interest'],
+                                           'Side_meo_training_df' : Acct_meo_training_df},
+                                'Buy BP_side' : {'side' : 'PB',
+                                           'Transaction_Type' : ['Buy'],
+                                           'Side_meo_training_df' : BP_meo_training_df},
+                                'Buy Acct_side' : {'side' : 'Acct',
+                                           'Transaction_Type' : ['Buy'],
+                                           'Side_meo_training_df' : Acct_meo_training_df},
+                                'Sell BP_side' : {'side' : 'PB',
+                                           'Transaction_Type' : ['Sell'],
+                                           'Side_meo_training_df' : BP_meo_training_df},
+                                'Sell Acct_side' : {'side' : 'Acct',
+                                           'Transaction_Type' : ['Sell'],
+                                           'Side_meo_training_df' : Acct_meo_training_df},
+                                'ForwardFX BP_side' : {'side' : 'PB',
+                                           'Transaction_Type' : ['ForwardFX'],
+                                           'Side_meo_training_df' : BP_meo_training_df},
+                                'ForwardFX Acct_side' : {'side' : 'Acct',
+                                           'Transaction_Type' : ['ForwardFX'],
+                                           'Side_meo_training_df' : Acct_meo_training_df},
+                                'Internal Trans' : {'side' : 'PB',
+                                           'Transaction_Type' : ['Internal Trans'],
+                                           'Side_meo_training_df' : BP_meo_training_df},
+                                'Withdraw' : {'side' : 'Acct',
+                                           'Transaction_Type' : ['Withdraw'],
+                                           'Side_meo_training_df' : Acct_meo_training_df},
+                                'Deposit' : {'side' : 'Acct',
+                                           'Transaction_Type' : ['Deposit'],
+                                           'Side_meo_training_df' : Acct_meo_training_df},
+                                'Redemption' : {'side' : 'PB',
+                                           'Transaction_Type' : ['Redemption'],
+                                           'Side_meo_training_df' : BP_meo_training_df},
+                                'Subscription' : {'side' : 'PB',
+                                           'Transaction_Type' : ['Redemption'],
+                                           'Side_meo_training_df' : BP_meo_training_df},
+                                'Incoming Wire' : {'side' : 'PB',
+                                           'Transaction_Type' : ['Incoming Wire'],
+                                           'Side_meo_training_df' : BP_meo_training_df},
+                                'Transfer' : {'side' : 'Acct',
+                                           'Transaction_Type' : ['Transfer'],
+                                           'Side_meo_training_df' : Acct_meo_training_df},
+                                'Withdrawal BP_side' : {'side' : 'PB',
+                                           'Transaction_Type' : ['Withdrawal'],
+                                           'Side_meo_training_df' : BP_meo_training_df},
+                                'Withdrawal Acct_side' : {'side' : 'Acct',
+                                           'Transaction_Type' : ['Withdrawal'],
+                                           'Side_meo_training_df' : Acct_meo_training_df},
+                                'Revenue' : {'side' : 'Acct',
+                                           'Transaction_Type' : ['Revenue'],
+                                           'Side_meo_training_df' : Acct_meo_training_df},
+                                'Pay Down' : {'side' : 'Acct',
+                                           'Transaction_Type' : ['Pay Down'],
+                                           'Side_meo_training_df' : Acct_meo_training_df},
+                                'Over & Short' : {'side' : 'PB',
+                                           'Transaction_Type' : ['Over & Short'],
+                                           'Side_meo_training_df' : BP_meo_training_df}
+                                }
 
     print(os.getcwd())
     os.chdir('D:\\ViteosModel\\Closed')
@@ -528,12 +490,14 @@ def closed_daily_run(fun_setup_code,
 
 #### Break Prediction functions - Begin #### 
 
-
 def equals_fun(a,b):
     if a == b:
         return 1
     else:
         return 0
+
+vec_equals_fun = np.vectorize(equals_fun)
+
 
 def descclean(com,cat_list):
     cat_all1 = []
@@ -709,7 +673,7 @@ def date_edge_cases(item):
     return False
 
 def nan_fun(x):
-    if x=='nan' or x == '' or x == 'None':
+    if x=='nan':
         return 1
     else:
         return 0
@@ -742,11 +706,13 @@ def b_keymatch(b_cusip, b_isin):
         b_common_key = b_isin
     return (accounting_nan, b_common_key)
 
+
 def nan_equals_fun(a,b):
     if a==1 and b==1:
         return 1
     else:
         return 0
+
 
 def new_key_match_fun(a,b,c):
     if a==b and c==0:
@@ -754,43 +720,14 @@ def new_key_match_fun(a,b,c):
     else:
         return 0
 
-def  clean_text(df, text_field, new_text_field_name):
-    df[text_field] = df[text_field].astype(str)
-    df[new_text_field_name] = df[text_field].str.lower()
-    
-    
-    
-    df[new_text_field_name] = df[new_text_field_name].apply(lambda x: re.sub(r"(@[A-Za-z0-9]+)|([^0-9A-Za-z \t])|(\w+:\/\/\S+)|^rt|http.+?", "", x))  
-    # remove numbers
-    df[new_text_field_name] = df[new_text_field_name].apply(lambda x: re.sub(r"\d+", "", x))
-    df[new_text_field_name] = df[new_text_field_name].str.replace('usd','')
-    df[new_text_field_name] = df[new_text_field_name].str.replace('eur0','')
-    df[new_text_field_name] = df[new_text_field_name].str.replace(' usd','')
-    df[new_text_field_name] = df[new_text_field_name].str.replace(' euro','')
-
-    df[new_text_field_name] = df[new_text_field_name].str.replace(' eur','')
-    df[new_text_field_name] = df[new_text_field_name].str.replace('eur','')
-    
-    return df
-
 def umr_seg(X_test):
     b_count = X_test.groupby(['SideB.ViewData.Side0_UniqueIds'])['Predicted_action'].value_counts().reset_index(name='count')
     b_unique = X_test.groupby(['SideB.ViewData.Side0_UniqueIds'])['Predicted_action'].unique().reset_index()
     
     b_unique['len'] = b_unique['Predicted_action'].str.len()
     b_count2 = pd.merge(b_count, b_unique.drop('Predicted_action',1), on='SideB.ViewData.Side0_UniqueIds', how='left')
-    umr_table = b_count2[(b_count2['Predicted_action']=='UMR_One_to_One') & (b_count2['count']==1) & (b_count2['len']<=3)]
+    umr_table = b_count2[(b_count2['Predicted_action']=='UMR_One_to_One') & (b_count2['count']==1) & (b_count2['len']<=2)]
     return umr_table['SideB.ViewData.Side0_UniqueIds'].values
-
-def normalize_final_no_pair_table_col_names(fun_final_no_pair_table):
-    final_no_pair_table_col_names_mapping_dict = {
-                                      'SideA.ViewData.Side1_UniqueIds' : 'ViewData.Side1_UniqueIds',
-                                      'SideB.ViewData.Side0_UniqueIds' : 'ViewData.Side0_UniqueIds',
-                                      'SideA.ViewData.BreakID_A_side' : 'ViewData.BreakID_Side1', 
-                                      'SideB.ViewData.BreakID_B_side' : 'ViewData.BreakID_Side0'
-                                      }
-    fun_final_no_pair_table.rename(columns = final_no_pair_table_col_names_mapping_dict, inplace = True)
-    return(fun_final_no_pair_table)
 
 def no_pair_seg(X_test):
     
@@ -809,18 +746,6 @@ def no_pair_seg(X_test):
     
     return no_pair_ids_b_side, no_pair_ids_a_side
     
-def subSum(numbers,total):
-    for length in range(1, 3):
-        if len(numbers) < length or length < 1:
-            return []
-        for index,number in enumerate(numbers):
-            if length == 1 and np.isclose(number, total,atol=0.25).any():
-                return [number]
-            subset = subSum(numbers[index+1:],total-number)
-            if subset: 
-                return [number] + subset
-        return []
-
 def one_to_one_umb(data):
     
     count = data['SideB.ViewData.Side0_UniqueIds'].value_counts().reset_index(name='count0')
@@ -831,25 +756,62 @@ def one_to_one_umb(data):
     final_ids = count1[(count1['count1']==1) & (count1['index'].isin(id1s))]['index'].unique()
     return final_ids
 
-def no_pair_seg2(X_test):
-    
-    b_side_agg = X_test.groupby(['SideB.ViewData.Side0_UniqueIds'])['Predicted_action'].unique().reset_index()
-    a_side_agg = X_test.groupby(['SideA.ViewData.Side1_UniqueIds'])['Predicted_action'].unique().reset_index()
-    
-    b_side_agg['len'] = b_side_agg['Predicted_action'].str.len()
-    b_side_agg['No_Pair_flag'] = b_side_agg['Predicted_action'].apply(lambda x: 1 if 'No-Pair' in x else 0)
+def sample_otm(data, col1, col2):
+    ss =[]
+    count_table = data[col2].value_counts().reset_index()
+    count_table.columns = [col2, 'count']
+    for i in data[col1].unique():
+        ids1 = data[data[col1]==i][col2].unique()
+        if count_table[count_table[col2].isin(ids1)]['count'].max() ==1:
+            ss.append(i)
+        else:
+            pass
+    return ss
 
-    a_side_agg['len'] = a_side_agg['Predicted_action'].str.len()
-    a_side_agg['No_Pair_flag'] = a_side_agg['Predicted_action'].apply(lambda x: 1 if 'No-Pair' in x else 0)
-    
-    no_pair_ids_b_side = b_side_agg[(b_side_agg['len']==1) & (b_side_agg['No_Pair_flag']==1)]['SideB.ViewData.Side0_UniqueIds'].values
 
-    no_pair_ids_a_side = a_side_agg[(a_side_agg['len']==1) & (a_side_agg['No_Pair_flag']==1)]['SideA.ViewData.Side1_UniqueIds'].values
-    
-    return no_pair_ids_b_side, no_pair_ids_a_side
+def sample_mto(data, col1, col2):
+    ss =[]
+    count_table = data[col1].value_counts().reset_index()
+    count_table.columns = [col1, 'count']
+    for i in data[col2].unique():
+        ids0 = data[data[col2]==i][col1].unique()
+        if count_table[count_table[col1].isin(ids0)]['count'].max() ==1:
+            ss.append(i)
+        else:
+            pass
+    return ss
 
-def return_int_list(list_x):
-    return [int(i) for i in list_x]
+def find_closese_sum(numbers, targets):
+    numbers = numbers[:]
+    for t in targets:
+        if not numbers:
+            break
+    combs = sum([list(itertools.combinations(numbers, r)) for r in range(1, len(numbers)+1)], [])
+    sums = np.asarray(list(map(sum, combs)))
+    bestcomb = combs[np.argmin(np.abs(np.asarray(sums) - t))]
+    numbers = list(set(numbers).difference(bestcomb))
+    print("Target: {},  combination: {}".format(t, bestcomb))
+
+def finding_closet(ls,target,depth):
+    closest = []
+    for i in itertools.combinations(ls, depth):
+
+        if sum(i) == target:
+            return i
+        else:
+            closest.append((abs(sum(i) - target), i))
+    return min(closest)[1]
+
+def normalize_final_no_pair_table_col_names(fun_final_no_pair_table):
+    final_no_pair_table_col_names_mapping_dict = {
+                                      'SideA.ViewData.Side1_UniqueIds' : 'ViewData.Side1_UniqueIds',
+                                      'SideB.ViewData.Side0_UniqueIds' : 'ViewData.Side0_UniqueIds',
+                                      'SideA.ViewData.BreakID_A_side' : 'ViewData.BreakID_Side1', 
+                                      'SideB.ViewData.BreakID_B_side' : 'ViewData.BreakID_Side0'
+                                      }
+    fun_final_no_pair_table.rename(columns = final_no_pair_table_col_names_mapping_dict, inplace = True)
+    return(fun_final_no_pair_table)
+    
 
 #### Break Prediction functions - End #### 
 
@@ -861,9 +823,9 @@ date_numbers_list = [16]
                     # 21,22,23,24,25,
                     # 28,29,30]
 
-client = 'Soros'
+client = 'OakTree'
 
-setup_code = '153'
+setup_code = '379'
 
 today = date.today()
 d1 = datetime.strptime(today.strftime("%Y-%m-%d"),"%Y-%m-%d")
@@ -871,8 +833,8 @@ desired_date = d1 - timedelta(days=4)
 desired_date_str = desired_date.strftime("%Y-%m-%d")
 date_input = desired_date_str
 
-#filepaths_AUA = '//vitblrdevcons01/Raman  Strategy ML 2.0/All_Data/' + client + '/JuneData/AUA/AUACollections.AUA_HST_RecData_' + setup_code + '_' + str(date_input) + '.csv'
-#filepaths_MEO = '//vitblrdevcons01/Raman  Strategy ML 2.0/All_Data/' + client + '/JuneData/MEO/MeoCollections.MEO_HST_RecData_' + setup_code + '_' + str(date_input) + '.csv'
+filepaths_AUA = '//vitblrdevcons01/Raman  Strategy ML 2.0/All_Data/' + client + '/JuneData/AUA/AUACollections.AUA_HST_RecData_' + setup_code + '_' + str(date_input) + '.csv'
+filepaths_MEO = '//vitblrdevcons01/Raman  Strategy ML 2.0/All_Data/' + client + '/JuneData/MEO/MeoCollections.MEO_HST_RecData_' + setup_code + '_' + str(date_input) + '.csv'
 filepaths_no_pair_id_data = '//vitblrdevcons01/Raman  Strategy ML 2.0/All_Data/' + client + '/UAT_Run/X_Test_' + setup_code + '/no_pair_ids_' + setup_code + '_' + str(date_input) + '.csv'
 filepaths_no_pair_id_no_data_warning = '//vitblrdevcons01/Raman  Strategy ML 2.0/All_Data/' + client + '/UAT_Run/X_Test_' + setup_code + '/WARNING_no_pair_ids_' + setup_code + str(date_input) + '.csv'
 
@@ -880,10 +842,14 @@ filepaths_no_pair_id_no_data_warning = '//vitblrdevcons01/Raman  Strategy ML 2.0
 mngdb_obj_1_for_reading_and_writing_in_uat_server = mngdb(param_without_ssh  = True, param_without_RabbitMQ_pipeline = True,
                  param_SSH_HOST = None, param_SSH_PORT = None,
                  param_SSH_USERNAME = None, param_SSH_PASSWORD = None,
-                 param_MONGO_HOST = '10.1.15.137', param_MONGO_PORT = 27017,
-                 param_MONGO_USERNAME = 'mongouseradmin', param_MONGO_PASSWORD = '@L0ck&Key')
+                 param_MONGO_HOST = '192.168.170.158', param_MONGO_PORT = 27017,
+                 param_MONGO_USERNAME = '', param_MONGO_PASSWORD = '')
 mngdb_obj_1_for_reading_and_writing_in_uat_server.connect_with_or_without_ssh()
-db_1_for_MEO_data = mngdb_obj_1_for_reading_and_writing_in_uat_server.client['ReconDB_Soros_ML']
+#db_3_for_writing_in_ml_server = mngdb_obj_1_for_reading_and_writing_in_uat_server.client['MEO_AUA_Collections']
+#db_4_for_MEO_data = mngdb_obj_3_for_writing_in_uat_server.client['MeoCollections']
+db_1_for_MEO_data = mngdb_obj_1_for_reading_and_writing_in_uat_server.client['ReconDB_ML_Test']
+#db_5_for_AUA_data = mngdb_obj_3_for_writing_in_uat_server.client['AUACollections']
+#db_6_for_prediction = mngdb_obj_3_for_writing_in_uat_server.client['MLPrediction_Cash']
 
 
 query_1_for_MEO_data = db_1_for_MEO_data['RecData_' + setup_code].find({ 
@@ -903,10 +869,8 @@ list_of_dicts_query_result_1 = list(query_1_for_MEO_data)
 meo_df = json_normalize(list_of_dicts_query_result_1)
 meo_df = meo_df.loc[:,meo_df.columns.str.startswith('ViewData')]
 meo_df['ViewData.Task Business Date'] = meo_df['ViewData.Task Business Date'].apply(dt.datetime.isoformat) 
-meo_df.drop_duplicates(keep=False, inplace = True)
-meo = meo_df[new_cols]
 
-umb_carry_forward_df = meo_df[meo_df['ViewData.Status'] == 'UMB']
+meo = meo_df[new_cols]
 
 Side_0_1_UniqueIds_closed_all_dates_list = []
 
@@ -924,45 +888,48 @@ for i in range(0,len(date_numbers_list)):
 new_closed_keys = [i.replace('nan','') for i in Side_0_1_UniqueIds_closed_all_dates_list[0]]
 new_closed_keys = [i.replace('None','') for i in new_closed_keys]
 
-# ## Read testing data 
 
-meo['ViewData.Status'].value_counts()
 df1 = meo[~meo['ViewData.Status'].isin(['SMT','HST', 'OC', 'CT', 'Archive','SMR'])]
 #df = df[df['MatchStatus'] != 21]
 df1 = df1[~df1['ViewData.Status'].isnull()]
 df1 = df1.reset_index()
 df1 = df1.drop('index',1)
 
+#df1['close_key'] = df1['ViewData.Side0_UniqueIds'].astype(str) + df1['ViewData.Side1_UniqueIds'].astype(str)
+
+
 ## Output for Closed breaks
 
+#closed_df = df1[df1['close_key'].isin(list(Side_0_1_UniqueIds_closed_all_dates_list[0]))]
 closed_df_side1 = df1[df1['ViewData.Side1_UniqueIds'].isin(new_closed_keys)]
 closed_df_side0 = df1[df1['ViewData.Side0_UniqueIds'].isin(new_closed_keys)]
 closed_df = closed_df_side1.append(closed_df_side0)
 
-# ## Machine generated output
 df2 = df1[~((df1['ViewData.Side1_UniqueIds'].isin(new_closed_keys)) | (df1['ViewData.Side0_UniqueIds'].isin(new_closed_keys)))]
 df = df2.copy()
 df = df.reset_index()
 df = df.drop('index',1)
 df['Date'] = pd.to_datetime(df['ViewData.Task Business Date'])
+
 df = df[~df['Date'].isnull()]
 df = df.reset_index()
 df = df.drop('index',1)
+
+pd.to_datetime(df['Date'])
 
 df['Date'] = pd.to_datetime(df['Date']).dt.date
 
 df['Date'] = df['Date'].astype(str)
 
-df = df[df['ViewData.Status'].isin(['OB','SDB','UOB','UDB','CMF','CNF','SMB','SPM'])]
+df = df[df['ViewData.Status'].isin(['OB','SDB','UOB','UDB','CMF','CNF','SMB'])]
 df = df.reset_index()
 df = df.drop('index',1)
-
 df['ViewData.Side0_UniqueIds'] = df['ViewData.Side0_UniqueIds'].astype(str)
 df['ViewData.Side1_UniqueIds'] = df['ViewData.Side1_UniqueIds'].astype(str)
 df['flag_side0'] = df.apply(lambda x: len(x['ViewData.Side0_UniqueIds'].split(',')), axis=1)
 df['flag_side1'] = df.apply(lambda x: len(x['ViewData.Side1_UniqueIds'].split(',')), axis=1)
+df = df.rename(columns= {'ViewData.Cust Net Amount':'ViewData.B-P Net Amount'})
 
-# ## Sample data on one date
 print('The Date value count is:')
 print(df['Date'].value_counts())
 
@@ -971,16 +938,13 @@ date_i = df['Date'].mode()[0]
 print('Choosing the date : ' + date_i)
 
 sample = df[df['Date'] == date_i]
-
 sample = sample.reset_index()
 sample = sample.drop('index',1)
 
 smb = sample[sample['ViewData.Status']=='SMB'].reset_index()
 smb = smb.drop('index',1)
-
 smb_pb = smb.copy()
 smb_acc = smb.copy()
-
 smb_pb['ViewData.Accounting Net Amount'] = np.nan
 smb_pb['ViewData.Side0_UniqueIds'] = np.nan
 smb_pb['ViewData.Status'] ='SMB-OB'
@@ -988,20 +952,14 @@ smb_pb['ViewData.Status'] ='SMB-OB'
 smb_acc['ViewData.B-P Net Amount'] = np.nan
 smb_acc['ViewData.Side1_UniqueIds'] = np.nan
 smb_acc['ViewData.Status'] ='SMB-OB'
-
 sample = sample[sample['ViewData.Status']!='SMB']
 sample = sample.reset_index()
 sample = sample.drop('index',1)
-
 sample = pd.concat([sample,smb_pb,smb_acc],axis=0)
 sample = sample.reset_index()
 sample = sample.drop('index',1)
-
 sample['ViewData.Side0_UniqueIds'] = sample['ViewData.Side0_UniqueIds'].astype(str)
 sample['ViewData.Side1_UniqueIds'] = sample['ViewData.Side1_UniqueIds'].astype(str)
-
-sample.loc[sample['ViewData.Side0_UniqueIds']=='nan','flag_side0'] = 0
-sample.loc[sample['ViewData.Side1_UniqueIds']=='nan','flag_side1'] = 0
 
 sample.loc[sample['ViewData.Side0_UniqueIds']=='None','flag_side0'] = 0
 sample.loc[sample['ViewData.Side1_UniqueIds']=='None','flag_side1'] = 0
@@ -1009,47 +967,40 @@ sample.loc[sample['ViewData.Side1_UniqueIds']=='None','flag_side1'] = 0
 sample.loc[sample['ViewData.Side1_UniqueIds']=='None','Trans_side'] = 'B_side'
 sample.loc[sample['ViewData.Side0_UniqueIds']=='None','Trans_side'] = 'A_side'
 
+
 sample.loc[sample['Trans_side']=='A_side','ViewData.B-P Currency'] = sample.loc[sample['Trans_side']=='A_side','ViewData.Currency']
 sample.loc[sample['Trans_side']=='B_side','ViewData.Accounting Currency'] = sample.loc[sample['Trans_side']=='B_side','ViewData.Currency'] 
 
 sample['ViewData.B-P Currency'] = sample['ViewData.B-P Currency'].astype(str)
 sample['ViewData.Accounting Currency'] = sample['ViewData.Accounting Currency'].astype(str)
 sample['ViewData.Mapped Custodian Account'] = sample['ViewData.Mapped Custodian Account'].astype(str)
+#sample['ViewData.Mapped Custodian Account'] = sample['ViewData.Mapped Custodian Account'].astype(str)
 sample['filter_key'] = sample.apply(lambda x: x['ViewData.Mapped Custodian Account'] + x['ViewData.B-P Currency'] if x['Trans_side']=='A_side' else x['ViewData.Mapped Custodian Account'] + x['ViewData.Accounting Currency'], axis=1)
-
-
 sample1 = sample[(sample['flag_side0']<=1) & (sample['flag_side1']<=1) & (sample['ViewData.Status'].isin(['OB','SPM','SDB','UDB','UOB','SMB-OB','CNF','CMF']))]
-
 sample1 = sample1.reset_index()
 sample1 = sample1.drop('index', 1)
-
 sample1['ViewData.BreakID'] = sample1['ViewData.BreakID'].astype(int)
-
 sample1 = sample1[sample1['ViewData.BreakID']!=-1]
 sample1 = sample1.reset_index()
 sample1 = sample1.drop('index',1)
-
 sample1 = sample1.sort_values(['ViewData.BreakID','Date'], ascending =[True, False])
 sample1 = sample1.reset_index()
 sample1 = sample1.drop('index',1)
-
 aa = sample1[sample1['Trans_side']=='A_side']
 bb = sample1[sample1['Trans_side']=='B_side']
-
 aa['filter_key'] = aa['ViewData.Source Combination'].astype(str) + aa['ViewData.Mapped Custodian Account'].astype(str) + aa['ViewData.B-P Currency'].astype(str)
 
 bb['filter_key'] = bb['ViewData.Source Combination'].astype(str) + bb['ViewData.Mapped Custodian Account'].astype(str) + bb['ViewData.Accounting Currency'].astype(str)
-
 aa = aa.reset_index()
 aa = aa.drop('index', 1)
 bb = bb.reset_index()
 bb = bb.drop('index', 1)
-
 bb = bb[~bb['ViewData.Accounting Net Amount'].isnull()]
 bb = bb.reset_index()
 bb = bb.drop('index',1)
-
 ###################### loop m*n ###############################
+
+
 
 pool =[]
 key_index =[]
@@ -1107,6 +1058,8 @@ for d in tqdm(aa['Date'].unique()):
             no_pair_ids.append([aa1[(aa1['filter_key']==key) & (aa1['ViewData.Status'].isin(['OB','SDB']))]['ViewData.Side1_UniqueIds'].values])
             no_pair_ids.append([bb1[(bb1['filter_key']==key) & (bb1['ViewData.Status'].isin(['OB','SDB']))]['ViewData.Side0_UniqueIds'].values])
             
+
+
 if len(no_pair_ids) != 0:
     no_pair_ids = np.unique(np.concatenate(no_pair_ids,axis=1)[0])
     no_pair_ids_df = pd.DataFrame(no_pair_ids, columns = ['Side0_1_UniqueIds'])
@@ -1127,21 +1080,21 @@ else:
 
 
 test_file = pd.concat(training_df)
+
 test_file = test_file.reset_index()
 test_file = test_file.drop('index',1)
 
 test_file['SideB.ViewData.BreakID_B_side'] = test_file['SideB.ViewData.BreakID_B_side'].astype('int64')
 test_file['SideA.ViewData.BreakID_A_side'] = test_file['SideA.ViewData.BreakID_A_side'].astype('int64')
-
 test_file['SideB.ViewData.CUSIP'] = test_file['SideB.ViewData.CUSIP'].str.split(".",expand=True)[0]
 test_file['SideA.ViewData.CUSIP'] = test_file['SideA.ViewData.CUSIP'].str.split(".",expand=True)[0]
-
 test_file['SideA.ViewData.ISIN'] = test_file['SideA.ViewData.ISIN'].astype(str)
 test_file['SideB.ViewData.ISIN'] = test_file['SideB.ViewData.ISIN'].astype(str)
 test_file['SideA.ViewData.CUSIP'] = test_file['SideA.ViewData.CUSIP'].astype(str)
 test_file['SideB.ViewData.CUSIP'] = test_file['SideB.ViewData.CUSIP'].astype(str)
 test_file['SideA.ViewData.Currency'] = test_file['SideA.ViewData.Currency'].astype(str)
 test_file['SideB.ViewData.Currency'] = test_file['SideB.ViewData.Currency'].astype(str)
+
 
 test_file['SideA.ViewData.Trade Date'] = test_file['SideA.ViewData.Trade Date'].astype(str)
 test_file['SideB.ViewData.Trade Date'] = test_file['SideB.ViewData.Trade Date'].astype(str)
@@ -1150,13 +1103,15 @@ test_file['SideB.ViewData.Settle Date'] = test_file['SideB.ViewData.Settle Date'
 test_file['SideA.ViewData.Fund'] = test_file['SideA.ViewData.Fund'].astype(str)
 test_file['SideB.ViewData.Fund'] = test_file['SideB.ViewData.Fund'].astype(str)
 
-vec_equals_fun = np.vectorize(equals_fun)
 values_ISIN_A_Side = test_file['SideA.ViewData.ISIN'].values
 values_ISIN_B_Side = test_file['SideB.ViewData.ISIN'].values
 #test_file['ISIN_match'] = vec_equals_fun(values_ISIN_A_Side,values_ISIN_B_Side)
 
 values_CUSIP_A_Side = test_file['SideA.ViewData.CUSIP'].values
 values_CUSIP_B_Side = test_file['SideB.ViewData.CUSIP'].values
+#
+# values_CUSIP_A_Side = test_file['SideA.ViewData.Currency'].values
+# values_CUSIP_B_Side = test_file['SideB.ViewData.Currency'].values
 
 values_Currency_match_A_Side = test_file['SideA.ViewData.Currency'].values
 values_Currency_match_B_Side = test_file['SideA.ViewData.Currency'].values
@@ -1177,18 +1132,21 @@ test_file['Trade_Date_match'] = vec_equals_fun(values_Trade_Date_match_A_Side,va
 test_file['Settle_Date_match'] = vec_equals_fun(values_Settle_Date_match_A_Side,values_Settle_Date_match_B_Side)
 test_file['Fund_match'] = vec_equals_fun(values_Fund_match_A_Side,values_Fund_match_B_Side)
 
-
 test_file['Amount_diff_1'] = test_file['SideA.ViewData.Accounting Net Amount'] - test_file['SideB.ViewData.B-P Net Amount']
 test_file['Amount_diff_2'] = test_file['SideB.ViewData.Accounting Net Amount'] - test_file['SideA.ViewData.B-P Net Amount']
 
+
 # ## Description code
-## TODO - Import a csv file for description category mapping
+
 os.chdir('D:\\ViteosModel\\OakTree - Pratik Code')
 print(os.getcwd())
 
-com = pd.read_csv('desc cat with naveen oaktree.csv')
+## TODO - Import a csv file for description category mapping
 
+com = pd.read_csv('desc cat with naveen oaktree.csv')
 cat_list = list(set(com['Pairing']))
+
+
 
 test_file['SideA.desc_cat'] = test_file['SideA.ViewData.Description'].apply(lambda x : descclean(x,cat_list))
 test_file['SideB.desc_cat'] = test_file['SideB.ViewData.Description'].apply(lambda x : descclean(x,cat_list))
@@ -1203,27 +1161,24 @@ com = com.drop_duplicates()
 com['Pairing'] = com['Pairing'].apply(lambda x : x.lower())
 com['replace'] = com['replace'].apply(lambda x : x.lower())
 
+
 test_file['SideA.new_desc_cat'] = test_file['SideA.desc_cat'].apply(lambda x : catcln1(x,com))
 test_file['SideB.new_desc_cat'] = test_file['SideB.desc_cat'].apply(lambda x : catcln1(x,com))
 
 comp = ['inc','stk','corp ','llc','pvt','plc']
 test_file['SideA.new_desc_cat'] = test_file['SideA.new_desc_cat'].apply(lambda x : 'Company' if x in comp else x)
+
 test_file['SideB.new_desc_cat'] = test_file['SideB.new_desc_cat'].apply(lambda x : 'Company' if x in comp else x)
 
 test_file['SideA.new_desc_cat'] = test_file['SideA.new_desc_cat'].apply(lambda x : desccat(x))
 test_file['SideB.new_desc_cat'] = test_file['SideB.new_desc_cat'].apply(lambda x : desccat(x))
-
 # ## Prime Broker
-
 test_file['new_pb'] = test_file['SideA.ViewData.Mapped Custodian Account'].apply(lambda x : x.split('_')[0] if type(x)==str else x)
 new_pb_mapping = {'GSIL':'GS','CITIGM':'CITI','JPMNA':'JPM'}
-
-test_file['SideA.ViewData.Prime Broker'] = test_file['SideA.ViewData.Prime Broker'].astype(str)
 test_file['SideA.ViewData.Prime Broker'] = test_file['SideA.ViewData.Prime Broker'].fillna('kkk')
-test_file['SideA.ViewData.Prime Broker'] = test_file['SideA.ViewData.Prime Broker'].apply(lambda x : 'kkk' if x == '' else x)
 test_file['new_pb1'] = test_file.apply(lambda x : x['new_pb'] if x['SideA.ViewData.Prime Broker']=='kkk' else x['SideA.ViewData.Prime Broker'],axis = 1)
-
 test_file['Trade_date_diff'] = (pd.to_datetime(test_file['SideA.ViewData.Trade Date']) - pd.to_datetime(test_file['SideB.ViewData.Trade Date'])).dt.days
+
 test_file['Settle_date_diff'] = (pd.to_datetime(test_file['SideA.ViewData.Settle Date']) - pd.to_datetime(test_file['SideB.ViewData.Settle Date'])).dt.days
 
 ############ Fund match new ########
@@ -1308,6 +1263,7 @@ remove_ats_B_side = [(item[:item.index('@')] if '@' in item else item) for item 
 
 cleaned_trans_types_A_side = [' '.join(item) for item in remove_ats_A_side]
 cleaned_trans_types_B_side = [' '.join(item) for item in remove_ats_B_side]
+
 # # INVESTMENT TYPE
 
 remove_nums_i_A_side = [[item for item in sublist if not is_num(item)] for sublist in split_invest_A_side]
@@ -1337,7 +1293,6 @@ test_file['SideB.ViewData.Investment Type'] = cleaned_invest_B_side
 test_file['SideA.ViewData.Asset Category Type'] = cleaned_asset_A_side
 test_file['SideB.ViewData.Asset Category Type'] = cleaned_asset_B_side
 
-##############
 values_transaction_type_match_A_Side = test_file['SideA.ViewData.Transaction Type'].values
 values_transaction_type_match_B_Side = test_file['SideB.ViewData.Transaction Type'].values
 
@@ -1357,21 +1312,23 @@ test_file['SideA.ViewData.Investment Type'] = test_file['SideA.ViewData.Investme
 test_file['SideA.ViewData.Investment Type'] = test_file['SideA.ViewData.Investment Type'].apply(lambda x: x.replace('eqt','equity'))
 test_file['SideA.ViewData.Investment Type'] = test_file['SideA.ViewData.Investment Type'].apply(lambda x: x.replace('eqty','equity'))
 
-test_file['SideB.ViewData.Investment Type'] = test_file['SideB.ViewData.Investment Type'].apply(lambda x: x.replace('eqty','equity'))
-test_file['SideB.ViewData.Investment Type'] = test_file['SideB.ViewData.Investment Type'].apply(lambda x: x.replace('options','option'))
-test_file['SideB.ViewData.Investment Type'] = test_file['SideB.ViewData.Investment Type'].apply(lambda x: x.replace('eqt','equity'))
-test_file['SideB.ViewData.Investment Type'] = test_file['SideB.ViewData.Investment Type'].apply(lambda x: x.replace('eqty','equity'))
-
 test_file['ViewData.Combined Transaction Type'] = test_file['SideA.ViewData.Transaction Type'].astype(str) +  test_file['SideB.ViewData.Transaction Type'].astype(str)
 test_file['ViewData.Combined Fund'] = test_file['SideA.ViewData.Fund'].astype(str) + test_file['SideB.ViewData.Fund'].astype(str)
+
 test_file['Combined_Investment_Type'] = test_file['SideA.ViewData.Investment Type'].astype(str) + test_file['SideB.ViewData.Investment Type'].astype(str)
+
 test_file['Combined_Asset_Type_Category'] = test_file['SideA.ViewData.Asset Category Type'].astype(str) + test_file['SideB.ViewData.Asset Category Type'].astype(str)
+
     
 vec_nan_fun = np.vectorize(nan_fun)
 values_ISIN_A_Side = test_file['SideA.ViewData.ISIN'].values
 values_ISIN_B_Side = test_file['SideB.ViewData.ISIN'].values
 test_file['SideA.ISIN_NA'] = vec_nan_fun(values_ISIN_A_Side)
 test_file['SideB.ISIN_NA'] = vec_nan_fun(values_ISIN_A_Side)
+
+len(test_file['SideB.ViewData.CUSIP'].values)
+
+
     
 vec_a_key_match_fun = np.vectorize(a_keymatch)
 vec_b_key_match_fun = np.vectorize(b_keymatch)
@@ -1386,7 +1343,7 @@ test_file['SideB.ViewData.key_NAN']= vec_a_key_match_fun(values_CUSIP_B_Side,val
 test_file['SideB.ViewData.Common_key'] = vec_a_key_match_fun(values_CUSIP_B_Side,values_ISIN_B_Side)[1]
 test_file['SideA.ViewData.key_NAN'] = vec_b_key_match_fun(values_CUSIP_A_Side,values_ISIN_A_Side)[0]
 test_file['SideA.ViewData.Common_key'] = vec_b_key_match_fun(values_CUSIP_A_Side,values_ISIN_A_Side)[1]
-    
+
 vec_nan_equal_fun = np.vectorize(nan_equals_fun)
 values_key_NAN_B_Side = test_file['SideB.ViewData.key_NAN'].values
 values_key_NAN_A_Side = test_file['SideA.ViewData.key_NAN'].values
@@ -1401,6 +1358,7 @@ values_Common_key_A_Side = test_file['SideA.ViewData.Common_key'].values
 values_All_key_NAN = test_file['All_key_nan'].values
 
 test_file['new_key_match']= vec_new_key_match_fun(values_Common_key_B_Side,values_Common_key_A_Side,values_All_key_NAN)
+
 test_file['amount_percent'] = (test_file['SideA.ViewData.B-P Net Amount']/test_file['SideB.ViewData.Accounting Net Amount']*100)
 
 test_file['SideB.ViewData.Investment Type'] = test_file['SideB.ViewData.Investment Type'].apply(lambda x: str(x).lower())
@@ -1411,31 +1369,39 @@ test_file['SideA.ViewData.Prime Broker'] = test_file['SideA.ViewData.Prime Broke
 
 test_file['SideB.ViewData.Asset Type Category'] = test_file['SideB.ViewData.Asset Type Category'].apply(lambda x: str(x).lower())
 test_file['SideA.ViewData.Asset Type Category'] = test_file['SideA.ViewData.Asset Type Category'].apply(lambda x: str(x).lower())
-test_file['SideA.ViewData.Transaction Type'] = test_file['SideA.ViewData.Transaction Type'].apply(lambda x: x.replace('cover short','covershort'))
+
 test_file['ViewData.Combined Transaction Type'] = test_file['ViewData.Combined Transaction Type'].apply(lambda x: x.replace('jnl','journal'))
+
+test_file['SideA.ViewData.Transaction Type'] = test_file['SideA.ViewData.Transaction Type'].apply(lambda x: x.replace('cover short','covershort'))
+
+trade_types_A = ['buy', 'sell', 'covershort','sellshort',
+       'fx', 'fx settlement', 'sell short',
+       'trade not to be reported_buy', 'covershort','ptbl','ptss', 'ptcs', 'ptcl']
+trade_types_B = ['trade not to be reported_buy','buy', 'sellshort', 'sell', 'covershort',
+       'spotfx', 'forwardfx',
+       'trade not to be reported_sell',
+       'trade not to be reported_sellshort',
+       'trade not to be reported_covershort']
 
 test_file['SideA.TType'] = test_file.apply(lambda x: "Trade" if x['SideA.ViewData.Transaction Type'] in trade_types_A else "Non-Trade", axis=1)
 test_file['SideB.TType'] = test_file.apply(lambda x: "Trade" if x['SideB.ViewData.Transaction Type'] in trade_types_B else "Non-Trade", axis=1)
 
 test_file['Combined_Desc'] = test_file['SideA.new_desc_cat'] + test_file['SideB.new_desc_cat']
+
 test_file['Combined_TType'] = test_file['SideA.TType'].astype(str) + test_file['SideB.TType'].astype(str)
-
-test_file =  clean_text(test_file,'SideA.ViewData.Description', 'SideA.ViewData.Description_new') 
-test_file =  clean_text(test_file,'SideB.ViewData.Description', 'SideB.ViewData.Description_new') 
-
-test_file['description_similarity_score'] = test_file.apply(lambda x: fuzz.token_sort_ratio(x['SideA.ViewData.Description_new'], x['SideB.ViewData.Description_new']), axis=1)
 
 for feature in ['SideA.Date','SideB.Date','SideA.ViewData.Settle Date','SideB.ViewData.Settle Date']:
     #train_full_new12[feature] = le.fit_transform(train_full_new12[feature])
     test_file[feature] = pd.to_datetime(test_file[feature],errors = 'coerce').dt.weekday
 
+
+
 # ## UMR Mapping
-
 ## TODO Import HIstorical UMR FILE for Transaction Type mapping
+oaktree_umr = pd.read_csv('OakTree_UMR.csv')
 
-Soros_umr = pd.read_csv('Soros_UMR_new.csv')
+test_file['tt_map_flag'] = test_file.apply(lambda x: 1 if x['ViewData.Combined Transaction Type'] in oaktree_umr['ViewData.Combined Transaction Type'].unique() else 0, axis=1)
 
-test_file['tt_map_flag'] = test_file.apply(lambda x: 1 if x['ViewData.Combined Transaction Type'] in Soros_umr['ViewData.Combined Transaction Type'].unique() else 0, axis=1)
 test_file['abs_amount_flag'] = test_file.apply(lambda x: 1 if x['SideB.ViewData.Accounting Net Amount'] == x['SideA.ViewData.B-P Net Amount']*(-1) else 0, axis=1)
 
 test_file = test_file[~test_file['SideB.ViewData.Settle Date'].isnull()]
@@ -1445,7 +1411,6 @@ test_file = test_file.reset_index().drop('index',1)
 test_file['SideA.ViewData.Settle Date'] = test_file['SideA.ViewData.Settle Date'].astype(int)
 test_file['SideB.ViewData.Settle Date'] = test_file['SideB.ViewData.Settle Date'].astype(int)
 
-test_file['new_pb1'] = test_file['new_pb1'].apply(lambda x: x.replace('Citi','CITI'))
 
 # ## Test file served into the model
 
@@ -1459,20 +1424,25 @@ X_test = X_test.fillna(0)
 
 X_test = X_test.fillna(0)
 
+X_test.shape
+
 X_test = X_test.drop_duplicates()
 X_test = X_test.reset_index()
 X_test = X_test.drop('index',1)
 
+X_test.shape
+
 # ## Model Pickle file import
 ## TODO Import Pickle file for 1st Model
-filename = 'Soros_final_model2.sav'
+
+filename = 'OakTree_final_model2.sav'
+
 clf = pickle.load(open(filename, 'rb'))
 
 # ## Predictions
 
 # Actual class predictions
 rf_predictions = clf.predict(X_test.drop(['SideB.ViewData.Status','SideB.ViewData.BreakID_B_side', 'SideA.ViewData.Status','SideA.ViewData.BreakID_A_side','SideA.ViewData._ID','SideB.ViewData._ID','SideB.ViewData.Side0_UniqueIds','SideA.ViewData.Side1_UniqueIds'],1))
-
 # Probabilities for each class
 rf_probs = clf.predict_proba(X_test.drop(['SideB.ViewData.Status','SideB.ViewData.BreakID_B_side', 'SideA.ViewData.Status','SideA.ViewData.BreakID_A_side','SideA.ViewData._ID','SideB.ViewData._ID','SideB.ViewData.Side0_UniqueIds','SideA.ViewData.Side1_UniqueIds'],1))[:, 1]
 
@@ -1485,57 +1455,67 @@ X_test['Predicted_action'] = rf_predictions
 X_test['probability_No_pair'] = probability_class_0
 X_test['probability_UMB'] = probability_class_1
 X_test['probability_UMR'] = probability_class_2
+X_test['Predicted_action'].value_counts()
 
 # ## Two Step Modeling
-X_test2 = test_file[model_cols_2]
 
+X_test2 = test_file[model_cols_2]
 X_test2 = X_test2.reset_index()
 X_test2 = X_test2.drop('index',1)
 X_test2 = X_test2.fillna(0)
 
+X_test2.shape
 X_test2 = X_test2.drop_duplicates()
 X_test2 = X_test2.reset_index()
 X_test2 = X_test2.drop('index',1)
 
+X_test2.shape
+
 ## TODO Import MOdel2 as per the two step modelling process
-filename2 = 'Soros_final_model2_step_two.sav'
+
+filename2 = 'OakTree_final_model2_step_two.sav'
 clf2 = pickle.load(open(filename2, 'rb'))
 
 # Actual class predictions
 rf_predictions2 = clf2.predict(X_test2.drop(['SideB.ViewData.Status','SideB.ViewData.BreakID_B_side', 'SideA.ViewData.Status','SideA.ViewData.BreakID_A_side','SideA.ViewData._ID','SideB.ViewData._ID','SideB.ViewData.Side0_UniqueIds','SideA.ViewData.Side1_UniqueIds'],1))
+
 # Probabilities for each class
 rf_probs2 = clf2.predict_proba(X_test2.drop(['SideB.ViewData.Status','SideB.ViewData.BreakID_B_side', 'SideA.ViewData.Status','SideA.ViewData.BreakID_A_side','SideA.ViewData._ID','SideB.ViewData._ID','SideB.ViewData.Side0_UniqueIds','SideA.ViewData.Side1_UniqueIds'],1))[:, 1]
 
 probability_class_0_two = clf2.predict_proba(X_test2.drop(['SideB.ViewData.Status','SideB.ViewData.BreakID_B_side','SideA.ViewData.Status','SideA.ViewData.BreakID_A_side','SideA.ViewData._ID','SideB.ViewData._ID','SideB.ViewData.Side0_UniqueIds','SideA.ViewData.Side1_UniqueIds'],1))[:, 0]
 probability_class_1_two = clf2.predict_proba(X_test2.drop(['SideB.ViewData.Status','SideB.ViewData.BreakID_B_side', 'SideA.ViewData.Status','SideA.ViewData.BreakID_A_side','SideA.ViewData._ID','SideB.ViewData._ID','SideB.ViewData.Side0_UniqueIds','SideA.ViewData.Side1_UniqueIds'],1))[:, 1]
+
 X_test2['Predicted_action_2'] = rf_predictions2
 X_test2['probability_No_pair_2'] = probability_class_0_two
 X_test2['probability_UMB_2'] = probability_class_1_two
 
+X_test2['Predicted_action_2'].value_counts()
+
+X_test.shape
+
 X_test = pd.concat([X_test, X_test2[['Predicted_action_2','probability_No_pair_2','probability_UMB_2']]],axis=1)
 
-X_test.loc[(X_test['Amount_diff_2'] != 0) & (X_test['Predicted_action'] == 'UMR_One_to_One'), 'Predicted_action'] = 'UMB_One_to_One'
-
 # ## New Aggregation
-
 X_test['Tolerance_level'] = np.abs(X_test['probability_UMB_2'] - X_test['probability_No_pair_2'])
-
 b_side_agg = X_test.groupby(['SideB.ViewData.Side0_UniqueIds'])['Predicted_action_2'].unique().reset_index()
 a_side_agg = X_test.groupby(['SideA.ViewData.Side1_UniqueIds'])['Predicted_action_2'].unique().reset_index()
 
-# ## UMR segregation
 
+# ## UMR segregation
 umr_ids_0 = umr_seg(X_test)
+
 
 
 # ## 1st Prediction Table for One to One UMR
 
 final_umr_table = X_test[X_test['SideB.ViewData.Side0_UniqueIds'].isin(umr_ids_0) & (X_test['Predicted_action']=='UMR_One_to_One')]
-
 final_umr_table = final_umr_table[['SideB.ViewData.Side0_UniqueIds','SideA.ViewData.Side1_UniqueIds','SideB.ViewData.BreakID_B_side','SideA.ViewData.BreakID_A_side','Predicted_action','probability_No_pair','probability_UMB','probability_UMR']]
+
 # ## No-Pair segregation
 
 no_pair_ids_b_side, no_pair_ids_a_side = no_pair_seg(X_test)
+
+X_test[(X_test['SideA.ViewData.Side1_UniqueIds'].isin(no_pair_ids_a_side))]['Predicted_action_2'].value_counts()
 
 X_test.groupby(['SideA.ViewData.Side1_UniqueIds'])['Predicted_action_2'].unique().reset_index()
 
@@ -1547,6 +1527,7 @@ final_open_table = final_open_table[['SideB.ViewData.Side0_UniqueIds','SideA.Vie
 
 final_open_table['probability_UMR'] = 0.00010
 final_open_table = final_open_table.rename(columns = {'Predicted_action_2':'Predicted_action','probability_No_pair_2':'probability_No_pair','probability_UMB_2':'probability_UMB'})
+
 
 b_side_open_table = final_open_table.groupby('SideB.ViewData.Side0_UniqueIds')[['probability_No_pair','probability_UMB','probability_UMR']].mean().reset_index()
 a_side_open_table = final_open_table.groupby('SideA.ViewData.Side1_UniqueIds')[['probability_No_pair','probability_UMB','probability_UMR']].mean().reset_index()
@@ -1562,10 +1543,11 @@ final_no_pair_table = final_no_pair_table.reset_index().drop('index',1)
 #
 #final_no_pair_table = pd.merge(final_no_pair_table, final_open_table[['SideA.ViewData.Side1_UniqueIds','SideA.ViewData.BreakID_A_side']].drop_duplicates(), on = 'SideA.ViewData.Side1_UniqueIds', how='left')
 #final_no_pair_table = pd.merge(final_no_pair_table, final_open_table[['SideB.ViewData.Side0_UniqueIds','SideB.ViewData.BreakID_B_side']].drop_duplicates(), on = 'SideB.ViewData.Side0_UniqueIds', how='left')
+#
 
 final_no_pair_table = normalize_final_no_pair_table_col_names(fun_final_no_pair_table = final_no_pair_table)
 final_no_pair_table_copy = final_no_pair_table.copy()
-#
+
 final_no_pair_table_copy['ViewData.Side0_UniqueIds'] = final_no_pair_table_copy['ViewData.Side0_UniqueIds'].astype(str)
 final_no_pair_table_copy['ViewData.Side1_UniqueIds'] = final_no_pair_table_copy['ViewData.Side1_UniqueIds'].astype(str)
  
@@ -1579,751 +1561,7 @@ del final_no_pair_table_copy['ViewData.Side0_UniqueIds']
 del final_no_pair_table_copy['ViewData.Side1_UniqueIds']
 
 
-
-# ## Remove Open Ids
-
-umr_ids_a_side = final_umr_table['SideA.ViewData.Side1_UniqueIds'].unique()
-umr_ids_b_side = final_umr_table['SideB.ViewData.Side0_UniqueIds'].unique()
-
-### Remove Open IDs
-
-X_test_left = X_test[~(X_test['SideB.ViewData.Side0_UniqueIds'].isin(no_pair_ids_b_side))]
-X_test_left = X_test_left[~(X_test_left['SideA.ViewData.Side1_UniqueIds'].isin(no_pair_ids_a_side))]
-
-## Remove UMR IDs
-
-X_test_left = X_test_left[~(X_test_left['SideA.ViewData.Side1_UniqueIds'].isin(umr_ids_a_side))]
-X_test_left = X_test_left[~(X_test_left['SideB.ViewData.Side0_UniqueIds'].isin(umr_ids_b_side))]
-
-
-X_test_left = X_test_left.reset_index().drop('index',1)
-
-# ## One to One UMB segregation
-
-X_test_left['Predicted_action_2'].value_counts()
-
-### IDs left after removing UMR ids from 0 and 1 side
-
-X_test_left = X_test_left[~(X_test_left['SideA.ViewData.Side1_UniqueIds'].isin(final_umr_table['SideA.ViewData.Side1_UniqueIds']))]
-
-X_test_left = X_test_left[~(X_test_left['SideB.ViewData.Side0_UniqueIds'].isin(final_umr_table['SideB.ViewData.Side0_UniqueIds']))]
-
-X_test_left.shape
-X_test_left['Predicted_action_2'].value_counts()
-
-X_test_left = X_test_left.drop(['SideB.ViewData._ID','SideA.ViewData._ID'],1).drop_duplicates()
-X_test_left = X_test_left.reset_index().drop('index',1)
-
-for key in X_test_left['SideB.ViewData.Side0_UniqueIds'].unique():
-    umb_ids_1 = X_test_left[(X_test_left['SideB.ViewData.Side0_UniqueIds']==key) & (X_test_left['Predicted_action_2']=='UMB_One_to_One')]['SideA.ViewData.Side1_UniqueIds'].unique()
-
-X_test_left['SideB.ViewData.Side0_UniqueIds'].value_counts()
-
-
-# ## UMR One to Many and Many to One 
-
-# ### One to Many
-cliff_for_loop = 16
-
-threshold_0 = X_test['SideB.ViewData.Side0_UniqueIds'].value_counts().reset_index(name='count')
-threshold_0_umb = threshold_0[threshold_0['count']>cliff_for_loop]['index'].unique()
-threshold_0_without_umb = threshold_0[threshold_0['count']<=cliff_for_loop]['index'].unique()
-
-exceptions_0_umb = X_test[X_test['Predicted_action_2']=='UMB_One_to_One']['SideB.ViewData.Side0_UniqueIds'].value_counts().reset_index(name='count')
-exceptions_0_umb_ids = exceptions_0_umb[exceptions_0_umb['count']>cliff_for_loop]['index'].unique()
-
-many_ids_1 = []
-one_id_0 = []
-amount_array =[]
-for key in X_test[~((X_test['SideB.ViewData.Side0_UniqueIds'].isin(exceptions_0_umb_ids)) | (X_test['SideB.ViewData.Side0_UniqueIds'].isin(final_umr_table['SideB.ViewData.Side0_UniqueIds'])))]['SideB.ViewData.Side0_UniqueIds'].unique():
-    print(key)
-    
-    if key in threshold_0_umb:
-
-        values =  X_test[(X_test['SideB.ViewData.Side0_UniqueIds']==key) & (X_test['Predicted_action_2']=='UMB_One_to_One')]['SideA.ViewData.B-P Net Amount'].values
-        net_sum = X_test[X_test['SideB.ViewData.Side0_UniqueIds']==key]['SideB.ViewData.Accounting Net Amount'].max()
-
-        #memo = dict()
-        #print(values)
-        #print(net_sum)
-
-        if subSum(values,net_sum) == []: 
-            #print("There are no valid subsets.")
-            amount_array = ['NULL']
-        else:
-            amount_array = subSum(values,net_sum)
-
-            id1_aggregation = X_test[(X_test['SideA.ViewData.B-P Net Amount'].isin(amount_array)) & (X_test['SideB.ViewData.Side0_UniqueIds']==key)]['SideA.ViewData.Side1_UniqueIds'].values
-            id0_unique = key       
-
-            if len(id1_aggregation)>1: 
-                many_ids_1.append(id1_aggregation)
-                one_id_0.append(id0_unique)
-            else:
-                pass
-            
-    else:
-        values =  X_test[(X_test['SideB.ViewData.Side0_UniqueIds']==key)]['SideA.ViewData.B-P Net Amount'].values
-        net_sum = X_test[X_test['SideB.ViewData.Side0_UniqueIds']==key]['SideB.ViewData.Accounting Net Amount'].max()
-
-        #memo = dict()
-        #print(values)
-        #print(net_sum)
-
-        if subSum(values,net_sum) == []: 
-            #print("There are no valid subsets.")
-            amount_array = ['NULL']
-        else:
-            amount_array = subSum(values,net_sum)
-
-            id1_aggregation = X_test[(X_test['SideA.ViewData.B-P Net Amount'].isin(amount_array)) & (X_test['SideB.ViewData.Side0_UniqueIds']==key)]['SideA.ViewData.Side1_UniqueIds'].values
-            id0_unique = key       
-
-            if len(id1_aggregation)>1: 
-                many_ids_1.append(id1_aggregation)
-                one_id_0.append(id0_unique)
-            else:
-                pass
-
-umr_otm_table = pd.DataFrame(one_id_0)
-
-if(umr_otm_table.empty == False):
-    umr_otm_table.columns = ['SideB.ViewData.Side0_UniqueIds']
-    umr_otm_table['SideA.ViewData.Side1_UniqueIds'] =many_ids_1 
-else:
-    temp_umr_otm_table_message = 'No One to many found'
-    print(temp_umr_otm_table_message)
-
-
-# ## Removing duplicate IDs from side 1
-
-if(len(many_ids_1) == 0):
-    unique_many_ids_1 = ['None']
-else:
-    unique_many_ids_1 = np.unique(np.concatenate(many_ids_1))
-
-dup_ids_0 = []
-for i in unique_many_ids_1:
-    count =0
-    for j in many_ids_1:
-        if i in j:
-            count = count+1
-            if count==2:
-                dup_ids_0.append(i)
-                break             
-            
-dup_array_0 = []
-for i in many_ids_1:
-    #print(i)
-    if any(x in dup_ids_0 for x in i):
-        dup_array_0.append(i)
-        
-
-### Converting array to list
-dup_array_0_list = []
-for i in dup_array_0:
-    dup_array_0_list.append(list(i))
-    
-many_ids_1_list =[] 
-for j in many_ids_1:
-    many_ids_1_list.append(list(j))
-    
-    
-filtered_otm = [i for i in many_ids_1_list if not i in dup_array_0_list]
-
-one_id_0_final = []
-for i, j in zip(many_ids_1_list, one_id_0):
-    if i in filtered_otm:
-        one_id_0_final.append(j) 
-
-umr_otm_table = umr_otm_table[umr_otm_table['SideB.ViewData.Side0_UniqueIds'].isin(one_id_0_final)]
-
-filtered_otm_flat = [item for sublist in filtered_otm for item in sublist]
-
-
-# ## Including UMR double count into OTM
-umr_double_count = X_test.groupby(['SideB.ViewData.Side0_UniqueIds'])['Predicted_action'].value_counts().reset_index(name='count')
-umr_double_count = umr_double_count[(umr_double_count['Predicted_action']=='UMR_One_to_One') & (umr_double_count['count']==2)]
-
-umr_double_count_left = umr_double_count[~umr_double_count['SideB.ViewData.Side0_UniqueIds'].isin(umr_otm_table['SideB.ViewData.Side0_UniqueIds'].unique())]
-
-pb_ids_otm_left = []
-acc_id_single = []
-
-for key in umr_double_count_left['SideB.ViewData.Side0_UniqueIds'].unique():
-    acc_amount = X_test[X_test['SideB.ViewData.Side0_UniqueIds']==key]['SideB.ViewData.Accounting Net Amount'].max()
-    pb_ids_otm = X_test[(X_test['SideB.ViewData.Side0_UniqueIds']==key) & ((X_test['SideB.ViewData.Accounting Net Amount']==X_test['SideA.ViewData.B-P Net Amount']) | (X_test['SideB.ViewData.Accounting Net Amount']== (-1)*X_test['SideA.ViewData.B-P Net Amount']))]['SideA.ViewData.Side1_UniqueIds'].values
-    pb_ids_otm_left.append(pb_ids_otm)
-    acc_id_single.append(key)
-
-umr_otm_table_double_count = pd.DataFrame(acc_id_single)
-umr_otm_table_double_count.columns = ['SideB.ViewData.Side0_UniqueIds']
-
-umr_otm_table_double_count['SideA.ViewData.Side1_UniqueIds'] = pb_ids_otm_left
-
-umr_otm_table_final = pd.concat([umr_otm_table, umr_otm_table_double_count], axis=0)
-if(umr_otm_table_final.empty == False):
-    umr_otm_table_final = umr_otm_table_final.reset_index().drop('index',1)
-
-# ### Many to One
-
-cliff_for_loop = 16
-
-threshold_1 = X_test['SideA.ViewData.Side1_UniqueIds'].value_counts().reset_index(name='count')
-threshold_1_umb = threshold_1[threshold_1['count']>cliff_for_loop]['index'].unique()
-threshold_1_without_umb = threshold_1[threshold_1['count']<=cliff_for_loop]['index'].unique()
-
-exceptions_1_umb = X_test[X_test['Predicted_action_2']=='UMB_One_to_One']['SideA.ViewData.Side1_UniqueIds'].value_counts().reset_index(name='count')
-exceptions_1_umb_ids = exceptions_1_umb[exceptions_1_umb['count']>cliff_for_loop]['index'].unique()
-
-def subSum(numbers,total):
-    for length in range(1, 4):
-        if len(numbers) < length or length < 1:
-            return []
-        for index,number in enumerate(numbers):
-            if length == 1 and np.isclose(number, total,atol=0.25).any():
-                return [number]
-            subset = subSum(numbers[index+1:],total-number)
-            if subset: 
-                return [number] + subset
-        return []
-
-many_ids_0 = []
-one_id_1 = []
-amount_array2 =[]
-for key in X_test[~((X_test['SideA.ViewData.Side1_UniqueIds'].isin(exceptions_1_umb_ids)) |(X_test['SideA.ViewData.Side1_UniqueIds'].isin(final_umr_table['SideA.ViewData.Side1_UniqueIds'])))]['SideA.ViewData.Side1_UniqueIds'].unique():
-    #if key not in ['1174_379879573_State Street','201_379823765_State Street']:
-    print(key)
-    if key in threshold_1_umb:
-
-        values2 =  X_test[(X_test['SideA.ViewData.Side1_UniqueIds']==key) & (X_test['Predicted_action_2']=='UMB_One_to_One')]['SideB.ViewData.Accounting Net Amount'].values
-        net_sum2 = X_test[X_test['SideA.ViewData.Side1_UniqueIds']==key]['SideA.ViewData.B-P Net Amount'].max()
-
-        #memo = dict()
-
-        if subSum(values2,net_sum2) == []: 
-            amount_array2 =[]
-            #print("There are no valid subsets.")
-
-        else:
-            amount_array2 = subSum(values2,net_sum2)
-
-            id0_aggregation = X_test[(X_test['SideB.ViewData.Accounting Net Amount'].isin(amount_array2)) & (X_test['SideA.ViewData.Side1_UniqueIds']==key)]['SideB.ViewData.Side0_UniqueIds'].values
-            id1_unique = key       
-
-            if len(id0_aggregation)>1: 
-                many_ids_0.append(id0_aggregation)
-                one_id_1.append(id1_unique)
-            else:
-                pass
-
-    else:
-        values2 =  X_test[(X_test['SideA.ViewData.Side1_UniqueIds']==key)]['SideB.ViewData.Accounting Net Amount'].values
-        net_sum2 = X_test[X_test['SideA.ViewData.Side1_UniqueIds']==key]['SideA.ViewData.B-P Net Amount'].max()
-
-        #memo = dict()
-
-        if subSum(values2,net_sum2) == []: 
-            amount_array2 =[]
-            #print("There are no valid subsets.")
-
-        else:
-            amount_array2 = subSum(values2,net_sum2)
-
-            id0_aggregation = X_test[(X_test['SideB.ViewData.Accounting Net Amount'].isin(amount_array2)) & (X_test['SideA.ViewData.Side1_UniqueIds']==key)]['SideB.ViewData.Side0_UniqueIds'].values
-            id1_unique = key       
-
-            if len(id0_aggregation)>1: 
-                many_ids_0.append(id0_aggregation)
-                one_id_1.append(id1_unique)
-            else:
-                pass
-
-umr_mto_table = pd.DataFrame(one_id_1)
-if(umr_mto_table.empty == False):
-    umr_mto_table.columns = ['SideA.ViewData.Side1_UniqueIds']
-    umr_mto_table['SideB.ViewData.Side0_UniqueIds'] =many_ids_0 
-#    umr_mto_table = umr_mto_table[umr_mto_table['SideA.ViewData.Side1_UniqueIds'].isin(one_id_1_final)]
-#    for i in range(0,umr_mto_table.shape[0]):
-#        umr_mto_table['BreakID_Side0'].iloc[i] = list(meo_df[meo_df['ViewData.Side0_UniqueIds'].isin(umr_mto_table['SideB.ViewData.Side0_UniqueIds'].values[i])]['ViewData.BreakID'])
-        #        fun_otm_mto_df['BreakID_Side1'].iloc[i] = list(fun_meo_df[fun_meo_df['ViewData.Side1_UniqueIds'].isin(fun_otm_mto_df['SideA.ViewData.Side1_UniqueIds'].iloc[i])]['ViewData.BreakID'])
-
-else:
-    temp_umr_mto_table_message = 'No Many to One found'
-    print(temp_umr_mto_table_message)
-
-# ## Removing duplicate IDs from side 0
-
-if(len(many_ids_0) == 0):
-    unique_many_ids_0 = ['None']
-else:
-    unique_many_ids_0 = np.unique(np.concatenate(many_ids_0))
-
-dup_ids_1 = []
-for i in unique_many_ids_0:
-    count =0
-    for j in many_ids_0:
-        if i in j:
-            count = count+1
-            if count==2:
-                dup_ids_1.append(i)
-                break             
-            
-dup_array_1 = []
-for i in many_ids_0:
-    #print(i)
-    if any(x in dup_ids_1 for x in i):
-        dup_array_1.append(i)
-        
-
-### Converting array to list
-dup_array_1_list = []
-for i in dup_array_1:
-    dup_array_1_list.append(list(i))
-    
-many_ids_0_list =[] 
-for j in many_ids_0:
-    many_ids_0_list.append(list(j))
-    
-    
-filtered_mto = [i for i in many_ids_0_list if not i in dup_array_1_list]
-
-one_id_1_final = []
-for i, j in zip(many_ids_0_list, one_id_1):
-    if i in filtered_mto:
-        one_id_1_final.append(j) 
-
-
-# In[2123]:
-
-
-#pd.set_option('max_columns',50)
-if(umr_mto_table.empty == False):
-    umr_mto_table = umr_mto_table[umr_mto_table['SideA.ViewData.Side1_UniqueIds'].isin(one_id_1_final)]
-    umr_mto_table['BreakID_Side0'] = umr_mto_table.apply(lambda x: list(meo_df[meo_df['ViewData.Side0_UniqueIds'].isin(umr_otm_table_final['SideB.ViewData.Side0_UniqueIds'])]['ViewData.BreakID']), axis=1)
-    for i in range(0,umr_mto_table.shape[0]):
-        umr_mto_table['BreakID_Side0'].iloc[i] = list(meo_df[meo_df['ViewData.Side0_UniqueIds'].isin(umr_mto_table['SideB.ViewData.Side0_UniqueIds'].values[i])]['ViewData.BreakID'])#        fun_otm_mto_df['BreakID_Side1'].iloc[i] = list(fun_meo_df[fun_meo_df['ViewData.Side1_UniqueIds'].isin(fun_otm_mto_df['SideA.ViewData.Side1_UniqueIds'].iloc[i])]['ViewData.BreakID'])
-
-else:
-    temp_umr_mto_table_message = 'No Many to One found'
-    print(temp_umr_mto_table_message)
-
-
-filtered_mto_flat = [item for sublist in filtered_mto for item in sublist]
-
-# ## Removing all the OTM and MTO Ids
-
-X_test_left2 = X_test_left[~(X_test_left['SideB.ViewData.Side0_UniqueIds'].isin(filtered_mto_flat))]
-
-X_test_left2 = X_test_left2[~(X_test_left2['SideA.ViewData.Side1_UniqueIds'].isin(list(one_id_1)))]
-
-X_test_left2 = X_test_left[~(X_test_left['SideB.ViewData.Side0_UniqueIds'].isin(filtered_otm_flat))]
-X_test_left2 = X_test_left2[~(X_test_left2['SideB.ViewData.Side0_UniqueIds'].isin(list(one_id_0)))]
-
-X_test_left2 = X_test_left2.reset_index().drop('index',1)
-
-# ## UMB one to one (final)
-
-X_test_umb = X_test_left2[X_test_left2['Predicted_action_2']=='UMB_One_to_One']
-X_test_umb = X_test_umb.reset_index().drop('index',1)
-
-one_side_unique_umb_ids = one_to_one_umb(X_test_umb)
-
-final_oto_umb_table = X_test_umb[X_test_umb['SideA.ViewData.Side1_UniqueIds'].isin(one_side_unique_umb_ids)]
-
-final_oto_umb_table = final_oto_umb_table[['SideB.ViewData.Side0_UniqueIds','SideA.ViewData.Side1_UniqueIds','SideB.ViewData.BreakID_B_side','SideA.ViewData.BreakID_A_side','Predicted_action_2','probability_No_pair_2','probability_UMB_2','probability_UMR']]
-
-final_oto_umb_table['probability_UMR'] = 0.00010
-final_oto_umb_table = final_oto_umb_table.rename(columns = {'Predicted_action_2':'Predicted_action','probability_No_pair_2':'probability_No_pair','probability_UMB_2':'probability_UMB'})
-
-# ## Removing IDs from OTO UMB
-
-X_test_left3 = X_test_left2[~(X_test_left2['SideB.ViewData.Side0_UniqueIds'].isin(final_oto_umb_table['SideB.ViewData.Side0_UniqueIds']))]
-X_test_left3 = X_test_left3[~(X_test_left3['SideA.ViewData.Side1_UniqueIds'].isin(final_oto_umb_table['SideA.ViewData.Side1_UniqueIds']))]
-
-
-X_test_left3 = X_test_left3.reset_index().drop('index',1)
-
-# ## UMB One to Many and Many to One
-
-## Total IDs 
-
-X_test['SideB.ViewData.Side0_UniqueIds'].nunique() + X_test['SideA.ViewData.Side1_UniqueIds'].nunique()
-X_test_left3['SideB.ViewData.Side0_UniqueIds'].nunique() + X_test_left3['SideA.ViewData.Side1_UniqueIds'].nunique()
-
-open_ids_0_last , open_ids_1_last = no_pair_seg2(X_test_left3)
-
-X_test_left3[~X_test_left3['SideB.ViewData.Side0_UniqueIds'].isin(open_ids_0_last)]
-
-X_test_left4 = X_test_left3[~((X_test_left3['SideB.ViewData.Side0_UniqueIds'].isin(open_ids_0_last)) | (X_test_left3['SideA.ViewData.Side1_UniqueIds'].isin(open_ids_1_last)))]
-
-X_test_left4 = X_test_left4.reset_index().drop('index',1)
-X_test_left4['SideB.ViewData.Side0_UniqueIds'].nunique() + X_test_left4['SideA.ViewData.Side1_UniqueIds'].nunique()
-
-# ## Many to Many new
-
-#MANY TO MANY NEW
-rr2 = X_test[X_test['Predicted_action_2']=='UMB_One_to_One'].groupby(['SideB.ViewData.Side0_UniqueIds'])['SideA.ViewData.Side1_UniqueIds'].unique().reset_index()
-rr2['SideA.ViewData.Side1_UniqueIds'] = rr2['SideA.ViewData.Side1_UniqueIds'].apply(tuple)
-
-rr2.groupby(['SideA.ViewData.Side1_UniqueIds'])['SideB.ViewData.Side0_UniqueIds'].unique().reset_index()
-
-rr2 = X_test_left4[X_test_left4['Predicted_action_2']=='UMB_One_to_One'].groupby(['SideB.ViewData.Side0_UniqueIds'])['SideA.ViewData.Side1_UniqueIds'].unique().reset_index()
-
-acc_amount = X_test[X_test['Predicted_action_2']=='UMB_One_to_One'].groupby(['SideB.ViewData.Side0_UniqueIds'])['SideB.ViewData.Accounting Net Amount'].max().reset_index()
-pb_amount_sum =  X_test[X_test['Predicted_action_2']=='UMB_One_to_One'].groupby(['SideB.ViewData.Side0_UniqueIds'])['SideA.ViewData.B-P Net Amount'].sum().reset_index()
-
-rr3 = pd.merge(rr2, acc_amount, on='SideB.ViewData.Side0_UniqueIds', how='left')
-rr4 = pd.merge(rr3, pb_amount_sum, on='SideB.ViewData.Side0_UniqueIds', how='left')
-
-rr4['SideA.ViewData.Side1_UniqueIds'] = rr4['SideA.ViewData.Side1_UniqueIds'].apply(tuple)
-
-rr5 = rr4.groupby(['SideA.ViewData.Side1_UniqueIds'])['SideB.ViewData.Side0_UniqueIds'].unique().reset_index()
-
-rr6 = pd.merge(rr5, rr4.groupby(['SideA.ViewData.Side1_UniqueIds'])['SideB.ViewData.Accounting Net Amount'].sum().reset_index(), on='SideA.ViewData.Side1_UniqueIds', how='left')
-
-rr7 = pd.merge(rr6,rr4[['SideA.ViewData.Side1_UniqueIds','SideA.ViewData.B-P Net Amount']].drop_duplicates(), on='SideA.ViewData.Side1_UniqueIds',how='left')
-
-rr7['diff'] = rr7['SideB.ViewData.Accounting Net Amount'] - rr7['SideA.ViewData.B-P Net Amount']
-
-rr7['pb_len'] = rr7['SideA.ViewData.Side1_UniqueIds'].apply(lambda x: len(x))
-rr7['acc_len'] = rr7['SideB.ViewData.Side0_UniqueIds'].apply(lambda x: len(x))
-
-rr8 = rr7[~((rr7['pb_len']==1)|(rr7['acc_len']==1))]
-rr8 = rr8.reset_index().drop('index',1)
-
-rr8[rr8['diff']==0]
-
-
-#umr_otm_table_final['count_side0_ids'] = umr_otm_table_final['SideA.ViewData.Side1_UniqueIds'].apply(lambda x : len(x))
-#umr_otm_table_final['count_ids'] = umr_otm_table_final['count_side0_ids'] + 1
-
-
-#Fill probability between 90 - 100 for umr
-
-umr_otm_table_final['BreakID_Side1'] = umr_otm_table_final.apply(lambda x: list(meo_df[meo_df['ViewData.Side1_UniqueIds'].isin(umr_otm_table_final['SideA.ViewData.Side1_UniqueIds'])]['ViewData.BreakID']), axis=1)
-
-for i in range(0,umr_otm_table_final.shape[0]):
-    umr_otm_table_final['BreakID_Side1'].iloc[i] = list(meo_df[meo_df['ViewData.Side1_UniqueIds']\
-                                                    .isin(umr_otm_table_final['SideA.ViewData.Side1_UniqueIds'].values[i])]\
-                                                    ['ViewData.BreakID'])#        fun_otm_mto_df['BreakID_Side1'].iloc[i] = list(fun_meo_df[fun_meo_df['ViewData.Side1_UniqueIds'].isin(fun_otm_mto_df['SideA.ViewData.Side1_UniqueIds'].iloc[i])]['ViewData.BreakID'])
-
-
-#def return_BreakID_list(list_x, fun_meo_df):
-#    return [fun_meo_df[fun_meo_df['ViewData.Side1_UniqueIds'].isin(list(i))]['ViewData.BreakID'] for i in list_x]
-#
-#
-#
-#def return_BreakID_list2(list_x, fun_meo_df):
-#    return [fun_meo_df[fun_meo_df['ViewData.Side0_UniqueIds'] == str(i)]['ViewData.BreakID'].unique() for i in list_x]
-#
-#umr_mto_table['BreakID_Side0'] = umr_mto_table['SideB.ViewData.Side0_UniqueIds'].apply(lambda x : return_BreakID_list(list_x=x,fun_meo_df = meo_df))
-
-
-#def return_int_list(list_x):
-#    return [int(i) for i in list_x]
-#
-#
-umr_otm_table_final['BreakID_Side1_int'] = umr_otm_table_final['BreakID_Side1'].apply(lambda x : return_int_list(x))
-umr_otm_table_final['BreakID_Side1_str'] = [','.join(map(str,lst)) for lst in umr_otm_table_final['BreakID_Side1_int']]
-
-umr_otm_table_final['BreakID_Side0'] = ''
-for i in range(0,umr_otm_table_final.shape[0]):
-    umr_otm_table_final['BreakID_Side0'].iloc[i] = meo_df[meo_df['ViewData.Side0_UniqueIds'] == umr_otm_table_final['SideB.ViewData.Side0_UniqueIds'][i]]['ViewData.BreakID'].values
-for i in range(0,umr_otm_table_final.shape[0]):
-    umr_otm_table_final['BreakID_Side0'].iloc[i] = umr_otm_table_final['BreakID_Side0'][i][0]
-
-umr_otm_table_final['BreakID_Side0'] = umr_otm_table_final['BreakID_Side0'].astype(int)
-umr_otm_table_final_col_order = ['SideB.ViewData.Side0_UniqueIds','SideA.ViewData.Side1_UniqueIds','BreakID_Side1_str','BreakID_Side0']
-umr_otm_table_final = umr_otm_table_final[umr_otm_table_final_col_order] 
-umr_otm_table_final 
-
-
-
-
-
-
-
-
-
-
-umr_otm_table_final = normalize_final_no_pair_table_col_names(fun_final_no_pair_table = umr_otm_table_final)
-#
-umr_otm_table_final['ViewData.Side0_UniqueIds'] = umr_otm_table_final['ViewData.Side0_UniqueIds'].astype(str)
-umr_otm_table_final['ViewData.Side1_UniqueIds'] = umr_otm_table_final['ViewData.Side1_UniqueIds'].astype(str)
- 
-umr_otm_table_final_new = pd.merge(umr_otm_table_final, meo_df[['ViewData.Side0_UniqueIds','ViewData.BreakID','ViewData.Task ID','ViewData.Task Business Date','ViewData.Source Combination Code']].drop_duplicates(), on = 'ViewData.Side0_UniqueIds', how='left')
-#    #no_pair_ids_df = no_pair_ids_df.rename(columns={'0':'filter_key'})
-umr_otm_table_final_new['Predicted_Status'] = 'UMR'
-umr_otm_table_final_new['Predicted_action'] = 'UMR_One-Many_to_Many-One'
-umr_otm_table_final_new['ML_flag'] = 'ML'
-umr_otm_table_final_new['SetupID'] = setup_code 
-
-filepaths_umr_otm_table_final_new = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' + client + '\\UAT_Run\\X_Test_' + setup_code +'\\umr_otm_table_final_new.csv'
-umr_otm_table_final_new.to_csv(filepaths_umr_otm_table_final_new)
-
-change_names_of_umr_otm_table_mapping_dict = {
-                                            'ViewData.Side0_UniqueIds' : 'Side0_UniqueIds',
-                                            'ViewData.Side1_UniqueIds' : 'Side1_UniqueIds',
-                                            'BreakID_Side0' : 'BreakID',
-                                            'BreakID_Side1_str' : 'Final_predicted_break',
-                                            'ViewData.Task ID' : 'Task ID',
-                                            'ViewData.Task Business Date' : 'Task Business Date',
-                                            'ViewData.Source Combination Code' : 'Source Combination Code'
-                                        }
-
-
-umr_otm_table_final_new.rename(columns = change_names_of_umr_otm_table_mapping_dict, inplace = True)
-
-umr_otm_table_final_new['Task Business Date'] = pd.to_datetime(umr_otm_table_final_new['Task Business Date'])
-umr_otm_table_final_new['Task Business Date'] = umr_otm_table_final_new['Task Business Date'].map(lambda x: dt.datetime.strftime(x, '%Y-%m-%dT%H:%M:%SZ'))
-umr_otm_table_final_new['Task Business Date'] = pd.to_datetime(umr_otm_table_final_new['Task Business Date'])
-
-
-umr_otm_table_final_new['PredictedComment'] = ''
-
-#Changing data types of columns as follows:
-#Side0_UniqueIds, Side1_UniqueIds, Final_predicted_break, Predicted_action, probability_No_pair, probability_UMB, probability_UMR, BusinessDate, SourceCombinationCode, Predicted_Status, ML_flag - string
-#BreakID, TaskID - int64
-#SetupID - int32
-umr_otm_table_final_new['probability_UMB'] = 0.05
-umr_otm_table_final_new['probability_No_pair'] = 0.05
-umr_otm_table_final_new['probability_UMR'] = 0.95
-    
-for i in range(0,umr_otm_table_final_new.shape[0]):
-    umr_otm_table_final_new['probability_UMB'].iloc[i] = float(decimal.Decimal(random.randrange(50, 100))/1000)
-    umr_otm_table_final_new['probability_No_pair'].iloc[i] = float(decimal.Decimal(random.randrange(50, 100))/1000)
-    umr_otm_table_final_new['probability_UMR'].iloc[i] = float(decimal.Decimal(random.randrange(900, 1000))/1000)
-
-umr_otm_table_final_new[['Side0_UniqueIds', 'Side1_UniqueIds', 'Final_predicted_break', 'Predicted_action', 'probability_No_pair', 'probability_UMB', 'probability_UMR', 'Source Combination Code', 'Predicted_Status', 'ML_flag']] = umr_otm_table_final_new[['Side0_UniqueIds', 'Side1_UniqueIds', 'Final_predicted_break', 'Predicted_action', 'probability_No_pair', 'probability_UMB', 'probability_UMR', 'Source Combination Code', 'Predicted_Status', 'ML_flag']].astype(str)
-
-umr_otm_table_final_new[['BreakID', 'Task ID']] = umr_otm_table_final_new[['BreakID', 'Task ID']].astype(float)
-umr_otm_table_final_new[['BreakID', 'Task ID']] = umr_otm_table_final_new[['BreakID', 'Task ID']].astype(np.int64)
-
-umr_otm_table_final_new[['SetupID']] = umr_otm_table_final_new[['SetupID']].astype(int)
-
-#final_table_to_write['Task ID'] = final_table_to_write['Task ID'].astype(float)
-#final_table_to_write['Task ID'] = final_table_to_write['Task ID'].astype(np.int64)
-
-change_col_names_umr_otm_final_new_dict = {
-                        'Task ID' : 'TaskID',
-                        'Task Business Date' : 'BusinessDate',
-                        'Source Combination Code' : 'SourceCombinationCode'
-                        }
-umr_otm_table_final_new.rename(columns = change_col_names_umr_otm_final_new_dict, inplace = True)
-
-cols_for_database_new = ['Side0_UniqueIds',
- 'Side1_UniqueIds',
- 'BreakID',
- 'Final_predicted_break',
- 'Predicted_action',
- 'probability_No_pair',
- 'probability_UMB',
- 'probability_UMR',
- 'TaskID',
- 'BusinessDate',
- 'SourceCombinationCode',
- 'Predicted_Status',
- 'ML_flag',
- 'SetupID']
-
-umr_otm_table_final_new_to_write = umr_otm_table_final_new[cols_for_database_new]
-
-filepaths_umr_otm_table_final_new = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' +client + '\\umr_otm_table_final_new.csv'
-umr_otm_table_final_new_to_write.to_csv(filepaths_umr_otm_table_final_new)
-
-
-
-
-umr_mto_table['BreakID_Side0_int'] = umr_mto_table['BreakID_Side0'].apply(lambda x : return_int_list(x))
-umr_mto_table['BreakID_Side0_str'] = [','.join(map(str,lst)) for lst in umr_mto_table['BreakID_Side0_int']]
-umr_mto_table['BreakID_Side1'] = meo_df[meo_df['ViewData.Side1_UniqueIds'].isin(list(umr_mto_table['SideA.ViewData.Side1_UniqueIds']))]['ViewData.BreakID'].values
-umr_mto_table['BreakID_Side1'] = umr_mto_table['BreakID_Side1'].astype(int)
-#        fun_otm_mto_df['BreakID_Side1'].iloc[i] = list(fun_meo_df[fun_meo_df['ViewData.Side1_UniqueIds'].isin(fun_otm_mto_df['SideA.ViewData.Side1_UniqueIds'].iloc[i])]['ViewData.BreakID'])
-
-umr_mto_table = normalize_final_no_pair_table_col_names(fun_final_no_pair_table = umr_mto_table)
-#
-umr_mto_table['ViewData.Side0_UniqueIds'] = umr_mto_table['ViewData.Side0_UniqueIds'].astype(str)
-umr_mto_table['ViewData.Side1_UniqueIds'] = umr_mto_table['ViewData.Side1_UniqueIds'].astype(str)
- 
-umr_mto_table_new = pd.merge(umr_mto_table, meo_df[['ViewData.Side1_UniqueIds','ViewData.BreakID','ViewData.Task ID','ViewData.Task Business Date','ViewData.Source Combination Code']].drop_duplicates(), on = 'ViewData.Side1_UniqueIds', how='left')
-#    #no_pair_ids_df = no_pair_ids_df.rename(columns={'0':'filter_key'})
-umr_mto_table_new['Predicted_Status'] = 'UMR'
-umr_mto_table_new['Predicted_action'] = 'UMR_One-Many_to_Many-One'
-umr_mto_table_new['ML_flag'] = 'ML'
-umr_mto_table_new['SetupID'] = setup_code 
-
-filepaths_umr_mto_table_new = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' + client + '\\UAT_Run\\X_Test_' + setup_code +'\\umr_mto_table_new.csv'
-umr_mto_table_new.to_csv(filepaths_umr_mto_table_new)
-
-change_names_of_umr_mto_table_mapping_dict = {
-                                            'ViewData.Side0_UniqueIds' : 'Side0_UniqueIds',
-                                            'ViewData.Side1_UniqueIds' : 'Side1_UniqueIds',
-                                            'BreakID_Side1' : 'BreakID',
-                                            'BreakID_Side0_str' : 'Final_predicted_break',
-                                            'ViewData.Task ID' : 'Task ID',
-                                            'ViewData.Task Business Date' : 'Task Business Date',
-                                            'ViewData.Source Combination Code' : 'Source Combination Code'
-                                        }
-
-
-umr_mto_table_new.rename(columns = change_names_of_umr_mto_table_mapping_dict, inplace = True)
-
-umr_mto_table_new['Task Business Date'] = pd.to_datetime(umr_mto_table_new['Task Business Date'])
-umr_mto_table_new['Task Business Date'] = umr_mto_table_new['Task Business Date'].map(lambda x: dt.datetime.strftime(x, '%Y-%m-%dT%H:%M:%SZ'))
-umr_mto_table_new['Task Business Date'] = pd.to_datetime(umr_mto_table_new['Task Business Date'])
-
-
-umr_mto_table_new['PredictedComment'] = ''
-
-#Changing data types of columns as follows:
-#Side0_UniqueIds, Side1_UniqueIds, Final_predicted_break, Predicted_action, probability_No_pair, probability_UMB, probability_UMR, BusinessDate, SourceCombinationCode, Predicted_Status, ML_flag - string
-#BreakID, TaskID - int64
-#SetupID - int32
-umr_mto_table_new['probability_UMB'] = 0.05
-umr_mto_table_new['probability_No_pair'] = 0.05
-umr_mto_table_new['probability_UMR'] = 0.95
-    
-for i in range(0,umr_mto_table_new.shape[0]):
-    umr_mto_table_new['probability_UMB'].iloc[i] = float(decimal.Decimal(random.randrange(50, 100))/1000)
-    umr_mto_table_new['probability_No_pair'].iloc[i] = float(decimal.Decimal(random.randrange(50, 100))/1000)
-    umr_mto_table_new['probability_UMR'].iloc[i] = float(decimal.Decimal(random.randrange(900, 1000))/1000)
-
-umr_mto_table_new[['Side0_UniqueIds', 'Side1_UniqueIds', 'Final_predicted_break', 'Predicted_action', 'probability_No_pair', 'probability_UMB', 'probability_UMR', 'Source Combination Code', 'Predicted_Status', 'ML_flag']] = umr_mto_table_new[['Side0_UniqueIds', 'Side1_UniqueIds', 'Final_predicted_break', 'Predicted_action', 'probability_No_pair', 'probability_UMB', 'probability_UMR', 'Source Combination Code', 'Predicted_Status', 'ML_flag']].astype(str)
-
-umr_mto_table_new[['BreakID', 'Task ID']] = umr_mto_table_new[['BreakID', 'Task ID']].astype(float)
-umr_mto_table_new[['BreakID', 'Task ID']] = umr_mto_table_new[['BreakID', 'Task ID']].astype(np.int64)
-
-umr_mto_table_new[['SetupID']] = umr_mto_table_new[['SetupID']].astype(int)
-
-#final_table_to_write['Task ID'] = final_table_to_write['Task ID'].astype(float)
-#final_table_to_write['Task ID'] = final_table_to_write['Task ID'].astype(np.int64)
-
-change_col_names_umr_mto_table_new_dict = {
-                        'Task ID' : 'TaskID',
-                        'Task Business Date' : 'BusinessDate',
-                        'Source Combination Code' : 'SourceCombinationCode'
-                        }
-umr_mto_table_new.rename(columns = change_col_names_umr_mto_table_new_dict, inplace = True)
-
-cols_for_database_new = ['Side0_UniqueIds',
- 'Side1_UniqueIds',
- 'BreakID',
- 'Final_predicted_break',
- 'Predicted_action',
- 'probability_No_pair',
- 'probability_UMB',
- 'probability_UMR',
- 'TaskID',
- 'BusinessDate',
- 'SourceCombinationCode',
- 'Predicted_Status',
- 'ML_flag',
- 'SetupID']
-
-umr_mto_table_new_to_write = umr_mto_table_new[cols_for_database_new]
-
-filepaths_umr_mto_table_new = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' +client + '\\umr_mto_table_new.csv'
-umr_mto_table_new_to_write.to_csv(filepaths_umr_mto_table_new)
-
-
-
-final_oto_umb_table
-final_oto_umb_table = normalize_final_no_pair_table_col_names(fun_final_no_pair_table = final_oto_umb_table)
-#
-final_oto_umb_table['ViewData.Side0_UniqueIds'] = final_oto_umb_table['ViewData.Side0_UniqueIds'].astype(str)
-final_oto_umb_table['ViewData.Side1_UniqueIds'] = final_oto_umb_table['ViewData.Side1_UniqueIds'].astype(str)
- 
-final_oto_umb_table_new = pd.merge(final_oto_umb_table, meo_df[['ViewData.Side1_UniqueIds','ViewData.Task ID','ViewData.Task Business Date','ViewData.Source Combination Code']].drop_duplicates(), on = 'ViewData.Side1_UniqueIds', how='left')
-#    #no_pair_ids_df = no_pair_ids_df.rename(columns={'0':'filter_key'})
-final_oto_umb_table_new['Predicted_Status'] = 'UMB'
-final_oto_umb_table_new['ML_flag'] = 'ML'
-final_oto_umb_table_new['SetupID'] = setup_code 
-
-filepaths_final_oto_umb_table_new = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' + client + '\\UAT_Run\\X_Test_' + setup_code +'\\final_oto_umb_table_new.csv'
-final_oto_umb_table_new.to_csv(filepaths_final_oto_umb_table_new)
-
-change_names_of_final_oto_umb_table_new_mapping_dict = {
-                                            'ViewData.Side0_UniqueIds' : 'Side0_UniqueIds',
-                                            'ViewData.Side1_UniqueIds' : 'Side1_UniqueIds',
-                                            'ViewData.BreakID_Side1' : 'BreakID',
-                                            'ViewData.BreakID_Side0' : 'Final_predicted_break',
-                                            'ViewData.Task ID' : 'Task ID',
-                                            'ViewData.Task Business Date' : 'Task Business Date',
-                                            'ViewData.Source Combination Code' : 'Source Combination Code'
-                                        }
-
-
-final_oto_umb_table_new.rename(columns = change_names_of_final_oto_umb_table_new_mapping_dict, inplace = True)
-
-final_oto_umb_table_new['Task Business Date'] = pd.to_datetime(final_oto_umb_table_new['Task Business Date'])
-final_oto_umb_table_new['Task Business Date'] = final_oto_umb_table_new['Task Business Date'].map(lambda x: dt.datetime.strftime(x, '%Y-%m-%dT%H:%M:%SZ'))
-final_oto_umb_table_new['Task Business Date'] = pd.to_datetime(final_oto_umb_table_new['Task Business Date'])
-
-
-final_oto_umb_table_new['PredictedComment'] = ''
-
-#Changing data types of columns as follows:
-#Side0_UniqueIds, Side1_UniqueIds, Final_predicted_break, Predicted_action, probability_No_pair, probability_UMB, probability_UMR, BusinessDate, SourceCombinationCode, Predicted_Status, ML_flag - string
-#BreakID, TaskID - int64
-#SetupID - int32
-
-final_oto_umb_table_new[['Side0_UniqueIds', 'Side1_UniqueIds', 'Final_predicted_break', 'Predicted_action', 'probability_No_pair', 'probability_UMB', 'probability_UMR', 'Source Combination Code', 'Predicted_Status', 'ML_flag']] = final_oto_umb_table_new[['Side0_UniqueIds', 'Side1_UniqueIds', 'Final_predicted_break', 'Predicted_action', 'probability_No_pair', 'probability_UMB', 'probability_UMR', 'Source Combination Code', 'Predicted_Status', 'ML_flag']].astype(str)
-
-final_oto_umb_table_new[['BreakID', 'Task ID']] = final_oto_umb_table_new[['BreakID', 'Task ID']].astype(float)
-final_oto_umb_table_new[['BreakID', 'Task ID']] = final_oto_umb_table_new[['BreakID', 'Task ID']].astype(np.int64)
-
-final_oto_umb_table_new[['SetupID']] = final_oto_umb_table_new[['SetupID']].astype(int)
-
-#final_table_to_write['Task ID'] = final_table_to_write['Task ID'].astype(float)
-#final_table_to_write['Task ID'] = final_table_to_write['Task ID'].astype(np.int64)
-
-change_col_names_final_oto_umb_table_new_dict = {
-                        'Task ID' : 'TaskID',
-                        'Task Business Date' : 'BusinessDate',
-                        'Source Combination Code' : 'SourceCombinationCode'
-                        }
-final_oto_umb_table_new.rename(columns = change_col_names_final_oto_umb_table_new_dict, inplace = True)
-
-cols_for_database_new = ['Side0_UniqueIds',
- 'Side1_UniqueIds',
- 'BreakID',
- 'Final_predicted_break',
- 'Predicted_action',
- 'probability_No_pair',
- 'probability_UMB',
- 'probability_UMR',
- 'TaskID',
- 'BusinessDate',
- 'SourceCombinationCode',
- 'Predicted_Status',
- 'ML_flag',
- 'SetupID']
-
-final_oto_umb_table_new_to_write = final_oto_umb_table_new[cols_for_database_new]
-
-filepaths_final_oto_umb_table_new = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' +client + '\\final_oto_umb_table_new.csv'
-final_oto_umb_table_new_to_write.to_csv(filepaths_final_oto_umb_table_new)
-
-
-#
-#umr_mto_table
-#
-##This has probability already
-#
-#
-#final_oto_umb_table
-#
-#
-##Fill probability between 80 - 90 for no_pair 
-#open_ids_1_last
-#open_ids_0_last
-no_pair_ids_last = list(open_ids_1_last)
-for x in list(open_ids_0_last):
-    no_pair_ids_last.append(x)
-no_pair_ids_last_df = pd.DataFrame(no_pair_ids_last, columns = ['Side0_1_UniqueIds'])
-
-final_no_pair_table_copy = final_no_pair_table_copy.append([no_pair_ids_df,no_pair_ids_last_df])
+final_no_pair_table_copy = final_no_pair_table_copy.append(no_pair_ids_df)
 
 final_no_pair_table_copy = pd.merge(final_no_pair_table_copy, meo_df[['ViewData.Side1_UniqueIds','ViewData.BreakID','ViewData.Task ID','ViewData.Task Business Date','ViewData.Source Combination Code']].drop_duplicates(), left_on = 'Side0_1_UniqueIds',right_on = 'ViewData.Side1_UniqueIds', how='left')
 final_no_pair_table_copy = pd.merge(final_no_pair_table_copy, meo_df[['ViewData.Side0_UniqueIds','ViewData.BreakID','ViewData.Task ID','ViewData.Task Business Date','ViewData.Source Combination Code']].drop_duplicates(), left_on = 'Side0_1_UniqueIds',right_on = 'ViewData.Side0_UniqueIds', how='left')
@@ -2380,12 +1618,23 @@ final_no_pair_table_copy.loc[final_no_pair_table_copy['ViewData.Source Combinati
 
 final_no_pair_table_copy['Final_predicted_break'] = ''
 
-filepaths_no_pair_table = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' + client + '\\UAT_Run\\X_Test_' + setup_code +'\\final_no_pair_table.csv'
+filepaths_no_pair_table = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\OakTree\\UAT_Run\\X_Test_379\\final_no_pair_table.csv'
 final_no_pair_table_copy.to_csv(filepaths_no_pair_table)
 
 final_umr_table_copy = final_umr_table.copy()
 final_umr_table_copy = normalize_final_no_pair_table_col_names(fun_final_no_pair_table = final_umr_table_copy)
 
+#final_umr_table_copy['ViewData.Side0_UniqueIds'] = final_umr_table_copy['ViewData.Side0_UniqueIds'].astype(str)
+#final_umr_table_copy['ViewData.Side1_UniqueIds'] = final_umr_table_copy['ViewData.Side1_UniqueIds'].astype(str)
+# 
+#final_umr_table_copy.loc[final_umr_table_copy['ViewData.Side0_UniqueIds']=='None','Side0_1_UniqueIds'] = final_umr_table_copy['ViewData.Side1_UniqueIds']
+#final_umr_table_copy.loc[final_umr_table_copy['ViewData.Side1_UniqueIds']=='None','Side0_1_UniqueIds'] = final_umr_table_copy['ViewData.Side0_UniqueIds']
+#
+#final_umr_table_copy.loc[final_umr_table_copy['ViewData.Side0_UniqueIds']=='nan','Side0_1_UniqueIds'] = final_umr_table_copy['ViewData.Side1_UniqueIds']
+#final_umr_table_copy.loc[final_umr_table_copy['ViewData.Side1_UniqueIds']=='nan','Side0_1_UniqueIds'] = final_umr_table_copy['ViewData.Side0_UniqueIds']
+
+#del final_umr_table_copy['ViewData.Side0_UniqueIds']
+#del final_umr_table_copy['ViewData.Side1_UniqueIds']
 
 final_umr_table_copy = pd.merge(final_umr_table_copy, meo_df[['ViewData.Side1_UniqueIds','ViewData.Task ID','ViewData.Task Business Date','ViewData.Source Combination Code']].drop_duplicates(), on = 'ViewData.Side1_UniqueIds', how='left')
 final_umr_table_copy['Predicted_Status'] = 'UMR'
@@ -2451,226 +1700,38 @@ change_col_names_dict = {
                         }
 final_table_to_write.rename(columns = change_col_names_dict, inplace = True)
 
-final_table_to_write = final_table_to_write.append([final_oto_umb_table_new_to_write, \
-                                                    umr_mto_table_new_to_write, \
-                                                    umr_otm_table_final_new_to_write])
+filepaths_table_to_write = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\OakTree\\UAT_Run\\X_Test_379\\final_table_to_write.csv'
+
+filepaths_final_no_pair_table_copy = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\OakTree\\final_no_pair_table.csv'
+filepaths_meo_df = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\OakTree\\meo_df.csv'
+
+final_no_pair_table.to_csv(filepaths_final_no_pair_table_copy)
 
 
-#filepaths_final_table_to_write = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' + client + '\\final_table_to_write.csv'
-#final_table_to_write.to_csv(filepaths_final_table_to_write)
-#filepaths_final_no_pair_table_copy = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' + client + '\\final_no_pair_table_copy.csv'
-#filepaths_final_no_pair_table = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' + client + '\\final_no_pair_table.csv'
-#
-#filepaths_meo_df = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' + client + '\\meo_df.csv'
-#
-#final_no_pair_table.to_csv(filepaths_final_no_pair_table)
-#
-#
-#final_no_pair_table_copy.to_csv(filepaths_final_no_pair_table_copy)
-#meo_df.to_csv(filepaths_meo_df)
-
-
-#Closed Begins
-closed_columns_for_updation = ['ViewData.BreakID','ViewData.Task Business Date','ViewData.Side0_UniqueIds','ViewData.Side1_UniqueIds','ViewData.Source Combination Code','ViewData.Task ID']
-
-final_closed_df = closed_df[closed_columns_for_updation]
-final_closed_df['Predicted_Status'] = 'UCB'
-final_closed_df['Predicted_action'] = 'Closed'
-final_closed_df['ML_flag'] = 'ML'
-final_closed_df['SetupID'] = setup_code 
-final_closed_df['Final_predicted_break'] = ''
-final_closed_df['PredictedComment'] = ''
-final_closed_df['PredictedCategory'] = ''
-final_closed_df['probability_UMB'] = ''
-final_closed_df['probability_No_pair'] = ''
-final_closed_df['probability_UMR'] = ''
-
-final_closed_df[closed_columns_for_updation] = final_closed_df[closed_columns_for_updation].astype(str)
-change_names_of_final_closed_df_mapping_dict = {
-                                            'ViewData.Side0_UniqueIds' : 'Side0_UniqueIds',
-                                            'ViewData.Side1_UniqueIds' : 'Side1_UniqueIds',
-                                            'ViewData.BreakID' : 'BreakID',
-                                            'ViewData.Task ID' : 'TaskID',
-                                            'ViewData.Task Business Date' : 'BusinessDate',
-                                            'ViewData.Source Combination Code' : 'SourceCombinationCode'
-                                        }
-
-final_closed_df.rename(columns = change_names_of_final_closed_df_mapping_dict, inplace = True)
-
-final_closed_df['BusinessDate'] = pd.to_datetime(final_closed_df['BusinessDate'])
-final_closed_df['BusinessDate'] = final_closed_df['BusinessDate'].map(lambda x: dt.datetime.strftime(x, '%Y-%m-%dT%H:%M:%SZ'))
-final_closed_df['BusinessDate'] = pd.to_datetime(final_closed_df['BusinessDate'])
-
-
-#final_closed_df[[\
-#                 'Side0_UniqueIds', \
-#                 'Side1_UniqueIds', \
-#                 'Final_predicted_break', \
-#                 'Predicted_action', \
-#                 'probability_No_pair', \
-#                 'probability_UMB', \
-#                 'probability_UMR', \
-#                 'SourceCombinationCode', \
-#                 'Predicted_Status', \
-#                 'ML_flag']] = \
-#                 final_table_to_write[[\
-#                                       'Side0_UniqueIds', \
-#                                       'Side1_UniqueIds', \
-#                                       'Final_predicted_break', \
-#                                       'Predicted_action', \
-#                                       'probability_No_pair', \
-#                                       'probability_UMB', \
-#                                       'probability_UMR', \
-#                                       'SourceCombinationCode', \
-#                                       'Predicted_Status', \
-#                                       'ML_flag']] \
-#                 .astype(str)
-
-final_closed_df['Side0_UniqueIds'] = final_closed_df['Side0_UniqueIds'].astype(str)
-final_closed_df['Side1_UniqueIds'] = final_closed_df['Side1_UniqueIds'].astype(str)
-final_closed_df['Final_predicted_break'] = final_closed_df['Final_predicted_break'].astype(str)
-final_closed_df['Predicted_action'] = final_closed_df['Predicted_action'].astype(str)
-final_closed_df['probability_No_pair'] = final_closed_df['probability_No_pair'].astype(str)
-final_closed_df['probability_UMB'] = final_closed_df['probability_UMB'].astype(str)
-final_closed_df['probability_UMR'] = final_closed_df['probability_UMR'].astype(str)
-final_closed_df['SourceCombinationCode'] = final_closed_df['SourceCombinationCode'].astype(str)
-final_closed_df['Predicted_Status'] = final_closed_df['Predicted_Status'].astype(str)
-final_closed_df['ML_flag'] = final_closed_df['ML_flag'].astype(str)
-
-
-final_closed_df[['BreakID', 'TaskID']] = final_closed_df[['BreakID', 'TaskID']].astype(float)
-final_closed_df[['BreakID', 'TaskID']] = final_closed_df[['BreakID', 'TaskID']].astype(np.int64)
-
-final_closed_df[['SetupID']] = final_closed_df[['SetupID']].astype(int)
-filepaths_final_closed_df = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' + client + '\\final_closed_df.csv'
-final_closed_df.to_csv(filepaths_final_closed_df)
-#final_table_to_write['Task ID'] = final_table_to_write['Task ID'].astype(float)
-#final_table_to_write['Task ID'] = final_table_to_write['Task ID'].astype(np.int64)
-
-final_table_to_write = final_table_to_write.append(final_closed_df)
-#final_table_to_write = final_table_to_write.append([final_closed_df, \
-#                                                    final_oto_umb_table_new_to_write, \
-#                                                    umr_mto_table_new_to_write, \
-#                                                    umr_otm_table_final_new_to_write])
-
-#Closed Ends
-
-#UMB Carry Forward Begins
-umb_carry_forward_columns_to_select_from_meo_df = ['ViewData.BreakID', \
-                                                   'ViewData.Task Business Date', \
-                                                   'ViewData.Side0_UniqueIds', \
-                                                   'ViewData.Side1_UniqueIds', \
-                                                   'ViewData.Source Combination Code', \
-                                                   'ViewData.Task ID']
-umb_carry_forward_df = umb_carry_forward_df[umb_carry_forward_columns_to_select_from_meo_df]
-
-umb_carry_forward_df['Predicted_Status'] = 'UMB'
-umb_carry_forward_df['Predicted_action'] = 'UMB_Carry_Forward'
-umb_carry_forward_df['ML_flag'] = 'ML'
-umb_carry_forward_df['SetupID'] = setup_code 
-umb_carry_forward_df['Final_predicted_break'] = ''
-umb_carry_forward_df['PredictedComment'] = ''
-umb_carry_forward_df['PredictedCategory'] = ''
-umb_carry_forward_df['probability_UMB'] = ''
-umb_carry_forward_df['probability_No_pair'] = ''
-umb_carry_forward_df['probability_UMR'] = ''
-
-umb_carry_forward_df[umb_carry_forward_columns_to_select_from_meo_df] = umb_carry_forward_df[umb_carry_forward_columns_to_select_from_meo_df].astype(str)
-change_names_of_umb_carry_forward_df_mapping_dict = {
-                                            'ViewData.Side0_UniqueIds' : 'Side0_UniqueIds',
-                                            'ViewData.Side1_UniqueIds' : 'Side1_UniqueIds',
-                                            'ViewData.BreakID' : 'BreakID',
-                                            'ViewData.Task ID' : 'TaskID',
-                                            'ViewData.Task Business Date' : 'BusinessDate',
-                                            'ViewData.Source Combination Code' : 'SourceCombinationCode'
-                                        }
-
-umb_carry_forward_df.rename(columns = change_names_of_umb_carry_forward_df_mapping_dict, inplace = True)
-
-umb_carry_forward_df['BusinessDate'] = pd.to_datetime(umb_carry_forward_df['BusinessDate'])
-umb_carry_forward_df['BusinessDate'] = umb_carry_forward_df['BusinessDate'].map(lambda x: dt.datetime.strftime(x, '%Y-%m-%dT%H:%M:%SZ'))
-umb_carry_forward_df['BusinessDate'] = pd.to_datetime(umb_carry_forward_df['BusinessDate'])
-
-umb_carry_forward_df['Side0_UniqueIds'] = umb_carry_forward_df['Side0_UniqueIds'].astype(str)
-umb_carry_forward_df['Side1_UniqueIds'] = umb_carry_forward_df['Side1_UniqueIds'].astype(str)
-umb_carry_forward_df['Final_predicted_break'] = umb_carry_forward_df['Final_predicted_break'].astype(str)
-umb_carry_forward_df['Predicted_action'] = umb_carry_forward_df['Predicted_action'].astype(str)
-umb_carry_forward_df['probability_No_pair'] = umb_carry_forward_df['probability_No_pair'].astype(str)
-umb_carry_forward_df['probability_UMB'] = umb_carry_forward_df['probability_UMB'].astype(str)
-umb_carry_forward_df['probability_UMR'] = umb_carry_forward_df['probability_UMR'].astype(str)
-umb_carry_forward_df['SourceCombinationCode'] = umb_carry_forward_df['SourceCombinationCode'].astype(str)
-umb_carry_forward_df['Predicted_Status'] = umb_carry_forward_df['Predicted_Status'].astype(str)
-umb_carry_forward_df['ML_flag'] = umb_carry_forward_df['ML_flag'].astype(str)
-
-
-umb_carry_forward_df[['BreakID', 'TaskID']] = umb_carry_forward_df[['BreakID', 'TaskID']].astype(float)
-umb_carry_forward_df[['BreakID', 'TaskID']] = umb_carry_forward_df[['BreakID', 'TaskID']].astype(np.int64)
-
-final_closed_df[['SetupID']] = final_closed_df[['SetupID']].astype(int)
-filepaths_final_closed_df = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' + client + '\\final_closed_df.csv'
-final_closed_df.to_csv(filepaths_final_closed_df)
-
-#UMB Carry Forward Ends
-filepaths_final_table_to_write = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' + client + '\\final_table_to_write.csv'
-final_table_to_write.to_csv(filepaths_final_table_to_write)
-
-filepaths_final_no_pair_table_copy = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' + client + '\\final_no_pair_table_copy.csv'
 final_no_pair_table_copy.to_csv(filepaths_final_no_pair_table_copy)
-
-filepaths_final_no_pair_table = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' + client + '\\final_no_pair_table.csv'
-final_no_pair_table.to_csv(filepaths_final_no_pair_table)
-
-filepaths_meo_df = '\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\' + client + '\\meo_df.csv'
 meo_df.to_csv(filepaths_meo_df)
 
+#data_dict = final_table_to_write.to_dict("records")
+#coll_1_for_writing_prediction_data = db_1_for_MEO_data['MLPrediction_Cash']
+#coll_1_for_writing_prediction_data.insert_many(data_dict) 
+#
 
+#Commenting part starts here
+os.chdir('D:/ViteosModel/Abhijeet - Comment')
 
+final_no_pair_table_col_names_mapping_dict = {
+                                  'Side0_UniqueIds' : 'ViewData.Side0_UniqueIds',
+                                  'Side1_UniqueIds' : 'ViewData.Side1_UniqueIds',
+                                    }
+final_no_pair_table_copy.rename(columns = final_no_pair_table_col_names_mapping_dict, inplace = True)
 
-#Comment
+brk = final_no_pair_table_copy[final_no_pair_table_copy['Predicted_action'] == 'No-Pair']
 
-#Start of Commenting
-comment_df_final_list = []
-brk = final_table_to_write.copy()
-
-brk = brk[brk['Predicted_action'] == 'No-Pair']
-
-# In[6]:
-
-
-#meo_df = pd.read_csv('\\\\vitblrdevcons01\\Raman  Strategy ML 2.0\\All_Data\\Soros\\meo_df.csv')
-
-
-# In[8]:
-
-
-brk = brk.rename(columns ={'Side0_UniqueIds':'ViewData.Side0_UniqueIds',
-                         'Side1_UniqueIds':'ViewData.Side1_UniqueIds'})
-
-
-# In[92]:
-
-
-meo_df = meo_df.rename(columns ={'ViewData.B-P Net Amount':'ViewData.Cust Net Amount'
-                         })
-
-
-# In[93]:
-
-brk['ViewData.Side0_UniqueIds'] = brk['ViewData.Side0_UniqueIds'].fillna('AA')
-brk['ViewData.Side1_UniqueIds'] = brk['ViewData.Side1_UniqueIds'].fillna('BB')
-
-
-brk['ViewData.Side0_UniqueIds'] = brk['ViewData.Side0_UniqueIds'].replace('nan','AA')
-brk['ViewData.Side1_UniqueIds'] = brk['ViewData.Side1_UniqueIds'].replace('nan','BB')
-
-
-
-
-# In[94]:
-
+brk['Side0_UniqueIds'] = brk['Side0_UniqueIds'].fillna('AA')
+brk['Side1_UniqueIds'] = brk['Side1_UniqueIds'].fillna('BB')
 
 def fid1(a,b,c):
-    if a=='No-Pair':
+    if a=='OB':
         if b =='AA':
             return c
         else:
@@ -2678,58 +1739,24 @@ def fid1(a,b,c):
     else:
         return '12345'
 
+brk['final_ID'] = brk.apply(lambda row : fid1(row['Predicted_Status'],row['Side0_UniqueIds'],row['Side1_UniqueIds']),axis =1 )
 
-# In[95]:
-
-
-brk['final_ID'] = brk.apply(lambda row : fid1(row['Predicted_action'],row['ViewData.Side0_UniqueIds'],row['ViewData.Side1_UniqueIds']),axis =1 )
-
-
-# In[96]:
-
-
-side0_id = list(set(brk[brk['ViewData.Side1_UniqueIds'] =='BB']['ViewData.Side0_UniqueIds']))
-side1_id = list(set(brk[brk['ViewData.Side0_UniqueIds'] =='AA']['ViewData.Side1_UniqueIds']))
-
-
-# In[97]:
-
+side0_id = list(set(brk[brk['Side1_UniqueIds'] =='BB']['Side0_UniqueIds']))
+side1_id = list(set(brk[brk['Side0_UniqueIds'] =='AA']['Side1_UniqueIds']))
 
 meo1 = meo_df[meo_df['ViewData.Side0_UniqueIds'].isin(side0_id)]
 meo2 = meo_df[meo_df['ViewData.Side1_UniqueIds'].isin(side1_id)]
 
-
-# In[98]:
-
-
 frames = [meo1, meo2]
-
-
-# In[99]:
-
 
 df1 = pd.concat(frames)
 df1 = df1.reset_index()
 df1 = df1.drop('index', axis = 1)
 
-
-# ### Duplicate OB removal
-
-# In[100]:
-
-
 df1 = df1.drop_duplicates()
-
-
-# In[102]:
-
 
 df1['ViewData.Side0_UniqueIds'] = df1['ViewData.Side0_UniqueIds'].fillna('AA')
 df1['ViewData.Side1_UniqueIds'] = df1['ViewData.Side1_UniqueIds'].fillna('BB')
-
-
-# In[103]:
-
 
 def fid(a,b):
    
@@ -2737,99 +1764,32 @@ def fid(a,b):
         return a
     else:
         return b
-        
-
-
-# In[104]:
-
 
 df1['final_ID'] = df1.apply(lambda row: fid(row['ViewData.Side0_UniqueIds'],row['ViewData.Side1_UniqueIds']),axis =1)
 
-
-# In[105]:
-
-
-pd.set_option('display.max_columns', 500)
-
-
-# In[106]:
-
-
 df1 = df1.sort_values(['final_ID','ViewData.Business Date'], ascending = [True, True])
 
-
-# In[107]:
-
-
 uni2 = df1.groupby(['final_ID','ViewData.Task Business Date']).last().reset_index()
-
-
-# In[108]:
-
 
 uni2 = uni2.sort_values(['final_ID','ViewData.Task Business Date'], ascending = [True, True])
 
 
 # #### Trade date vs Settle date and future dated trade
-
-# In[109]:
-
-
 df2 = uni2.copy()
-
-
-# In[110]:
-
-
-df2.shape
-
-
-# In[111]:
-
-
-import datetime
-
-
-# In[112]:
-
 
 df2['ViewData.Settle Date'] = pd.to_datetime(df2['ViewData.Settle Date'])
 df2['ViewData.Trade Date'] = pd.to_datetime(df2['ViewData.Trade Date'])
 df2['ViewData.Task Business Date'] = pd.to_datetime(df2['ViewData.Task Business Date'])
 
-
-# In[113]:
-
-
 df2['ViewData.Task Business Date1'] = df2['ViewData.Task Business Date'].dt.date
-
-
-# In[114]:
-
-
 df2['ViewData.Settle Date1'] = df2['ViewData.Settle Date'].dt.date
 df2['ViewData.Trade Date1'] = df2['ViewData.Trade Date'].dt.date
-
-
-# In[115]:
-
 
 df2['ViewData.SettlevsTrade Date'] = (df2['ViewData.Settle Date1'] - df2['ViewData.Trade Date1']).dt.days
 df2['ViewData.SettlevsTask Date'] = (df2['ViewData.Task Business Date1'] - df2['ViewData.Settle Date1']).dt.days
 df2['ViewData.TaskvsTrade Date'] = (df2['ViewData.Task Business Date1'] - df2['ViewData.Trade Date1']).dt.days
 
-
-# ### Cleannig of the 4 variables in this
-
-# In[116]:
-
-os.chdir('D:\\ViteosModel\\Abhijeet - Comment')
-
 df = pd.read_excel('Mapping variables for variable cleaning.xlsx', sheet_name='General')
-
-
-# In[117]:
-
 
 def make_dict(row):
     keys_l = str(row['Keys']).lower()
@@ -2837,30 +1797,14 @@ def make_dict(row):
     keys = tuple(keys_s)
     return keys
 
-
-# In[118]:
-
-
 df['tuple'] = df.apply(make_dict, axis=1)
 
-
-# In[119]:
-
-
 clean_map_dict = df.set_index('tuple')['Value'].to_dict()
-
-
-# In[121]:
-
 
 df2['ViewData.Transaction Type'] = df2['ViewData.Transaction Type'].apply(lambda x : x.lower() if type(x)==str else x)
 df2['ViewData.Asset Type Category'] = df2['ViewData.Asset Type Category'].apply(lambda x : x.lower() if type(x)==str else x)
 df2['ViewData.Investment Type'] = df2['ViewData.Investment Type'].apply(lambda x : x.lower() if type(x)==str else x)
 df2['ViewData.Prime Broker'] = df2['ViewData.Prime Broker'].apply(lambda x : x.lower() if type(x)==str else x)
-
-
-# In[122]:
-
 
 def clean_mapping(item):
     item1 = item.split()
@@ -2885,20 +1829,11 @@ def clean_mapping(item):
         ttype = ttype + ttype1
         
     return ' '.join(ttype)
-        
-
-
-# In[123]:
-
 
 df2['ViewData.Transaction Type1'] = df2['ViewData.Transaction Type'].apply(lambda x : clean_mapping(x) if type(x)==str else x)
 df2['ViewData.Asset Type Category1'] = df2['ViewData.Asset Type Category'].apply(lambda x : clean_mapping(x) if type(x)==str else x)
 df2['ViewData.Investment Type1'] = df2['ViewData.Investment Type'].apply(lambda x : clean_mapping(x) if type(x)==str else x)
 df2['ViewData.Prime Broker1'] = df2['ViewData.Prime Broker'].apply(lambda x : clean_mapping(x) if type(x)==str else x)
-
-
-# In[124]:
-
 
 def is_num(item):
     try:
@@ -2920,24 +1855,6 @@ def date_edge_cases(item):
         return True
     return False
 
-
-# In[125]:
-
-
-
-import math
-
-from dateutil.parser import parse
-import operator
-import itertools
-
-import re
-import os
-
-
-# In[126]:
-
-
 def comb_clean(x):
     k = []
     for item in x.split():
@@ -2945,326 +1862,22 @@ def comb_clean(x):
             k.append(item)
     return ' '.join(k)
 
-
-# In[127]:
-
-
 df2['ViewData.Transaction Type1'] = df2['ViewData.Transaction Type1'].apply(lambda x : comb_clean(x) if type(x)==str else x)
-
-
-# In[128]:
-
-
 df2['ViewData.Asset Type Category1'] = df2['ViewData.Asset Type Category1'].apply(lambda x : comb_clean(x) if type(x)==str else x)
 df2['ViewData.Investment Type1'] = df2['ViewData.Investment Type1'].apply(lambda x : comb_clean(x) if type(x)==str else x)
 df2['ViewData.Prime Broker1'] = df2['ViewData.Prime Broker1'].apply(lambda x : comb_clean(x) if type(x)==str else x)
 
-
-# In[129]:
-
-
 df2['ViewData.Transaction Type1'] = df2['ViewData.Transaction Type1'].apply(lambda x : 'paydown' if x=='pay down' else x)
-
-
-# ### Cleaning of Description
-
-# In[131]:
-
-
-com = pd.read_csv('desc cat with naveen oaktree.csv')
-
-
-# In[132]:
-
-
-cat_list = list(set(com['Pairing']))
-
-
-# In[133]:
-
-
-import re
-
-
-# In[134]:
-
-
-
-def descclean(com,cat_list):
-    cat_all1 = []
-    list1 = cat_list
-    m = 0
-    if (type(com) == str):
-        com = com.lower()
-        com1 =  re.split("[,/. \-!?:]+", com)
-        
-        
-        
-        for item in list1:
-            if (type(item) == str):
-                item = item.lower()
-                item1 = item.split(' ')
-                lst3 = [value for value in item1 if value in com1] 
-                if len(lst3) == len(item1):
-                    cat_all1.append(item)
-                    m = m+1
-            
-                else:
-                    m = m
-            else:
-                    m = 0
-    else:
-        m = 0
-    
-    
-    
-    
-    
-            
-    if m >0 :
-        return list(set(cat_all1))
-    else:
-        if ((type(com)==str)):
-            if (len(com1)<4):
-                if ((len(com1)==1) & com1[0].startswith('20')== True):
-                    return 'swap id'
-                else:
-                    return com
-            else:
-                return 'NA'
-        else:
-            return 'NA'
-            
-
-
-# In[135]:
-
-
-df2['desc_cat'] = df2['ViewData.Description'].apply(lambda x : descclean(x,cat_list))
-
-
-# In[136]:
-
-
-def currcln(x):
-    if (type(x)==list):
-        return x
-      
-    else:
-       
-        
-        if x == 'NA':
-            return "NA"
-        elif (('dollar' in x) | ('dollars' in x )):
-            return 'dollar'
-        elif (('pound' in x) | ('pounds' in x)):
-            return 'pound'
-        elif ('yen' in x):
-            return 'yen'
-        elif ('euro' in x) :
-            return 'euro'
-        else:
-            return x
-        
-
-
-# In[137]:
-
-
-df2['desc_cat'] = df2['desc_cat'].apply(lambda x : currcln(x))
-
-
-# In[138]:
-
-
-com = com.drop(['var','Catogery'], axis = 1)
-
-
-# In[139]:
-
-
-com = com.drop_duplicates()
-
-
-# In[140]:
-
-
-com['Pairing'] = com['Pairing'].apply(lambda x : x.lower())
-com['replace'] = com['replace'].apply(lambda x : x.lower())
-
-
-# In[141]:
-
-
-def catcln1(cat,df):
-    ret = []
-    if (type(cat)==list):
-        
-        if 'equity swap settlement' in cat:
-            ret.append('equity swap settlement')
-        #return 'equity swap settlement'
-        elif 'equity swap' in cat:
-            ret.append('equity swap settlement')
-        #return 'equity swap settlement'
-        elif 'swap settlement' in cat:
-            ret.append('equity swap settlement')
-        #return 'equity swap settlement'
-        elif 'swap unwind' in cat:
-            ret.append('swap unwind')
-        #return 'swap unwind'
-   
-    
-        else:
-        
-       
-            for item in cat:
-            
-                a = df[df['Pairing']==item]['replace'].values[0]
-                if a not in ret:
-                    ret.append(a)
-        return list(set(ret))
-      
-    else:
-        return cat
-
-
-# In[142]:
-
-
-df2['new_desc_cat'] = df2['desc_cat'].apply(lambda x : catcln1(x,com))
-
-
-# In[143]:
-
-
-comp = ['inc','stk','corp ','llc','pvt','plc']
-df2['new_desc_cat'] = df2['new_desc_cat'].apply(lambda x : 'Company' if x in comp else x)
-
-
-# In[144]:
-
-
-def desccat(x):
-    if isinstance(x, list):
-        
-        if 'equity swap settlement' in x:
-            return 'swap settlement'
-        elif 'collateral transfer' in x:
-            return 'collateral transfer'
-        elif 'dividend' in x:
-            return 'dividend'
-        elif (('loan' in x) & ('option' in x)):
-            return 'option loan'
-        
-        elif (('interest' in x) & ('corp' in x) ):
-            return 'corp loan'
-        elif (('interest' in x) & ('loan' in x) ):
-            return 'interest'
-        else:
-            return x[0]
-    else:
-        if x == 'db_int':
-            return 'interest'
-        else:
-            return x
-
-
-# In[145]:
-
-
-df2['new_desc_cat'] = df2['new_desc_cat'].apply(lambda x : desccat(x))
-
-
-# #### Prime Broker Creation
-
-# In[146]:
-
-
-df2['new_pb'] = df2['ViewData.Mapped Custodian Account'].apply(lambda x : x.split('_')[0] if type(x)==str else x)
-
-
-# In[147]:
-
-
-new_pb_mapping = {'GSIL':'GS','CITIGM':'CITI','JPMNA':'JPM'}
-
-
-# In[148]:
-
-
-def new_pf_mapping(x):
-    if x=='GSIL':
-        return 'GS'
-    elif x == 'CITIGM':
-        return 'CITI'
-    elif x == 'JPMNA':
-        return 'JPM'
-    else:
-        return x
-
-
-# In[149]:
-
-
-df2['new_pb'] = df2['new_pb'].apply(lambda x : new_pf_mapping(x))
-
-
-# In[150]:
-
-
-df2['ViewData.Prime Broker1'] = df2['ViewData.Prime Broker1'].fillna('kkk')
-
-
-# In[151]:
-
-
-df2['new_pb1'] = df2.apply(lambda x : x['new_pb'] if x['ViewData.Prime Broker1']=='kkk' else x['ViewData.Prime Broker1'],axis = 1)
-
-
-# In[152]:
-
-
-df2['new_pb1'] = df2['new_pb1'].apply(lambda x : x.lower())
-
-
-# #### Cancelled Trade Removal
-
-# In[153]:
-
 
 trade_types = ['buy','sell','cover short', 'sell short', 'forward', 'forwardfx', 'spotfx']
 
-
-# In[154]:
-
-
 dfkk = df2[df2['ViewData.Transaction Type1'].isin(trade_types)]
-
-
-# In[155]:
-
-
-dfk_nontrade = df2[~df2['ViewData.Transaction Type1'].isin(trade_types)]
-
-
-# In[157]:
-
 
 dffk2 = dfkk[dfkk['ViewData.Side0_UniqueIds']=='AA']
 dffk3 = dfkk[dfkk['ViewData.Side1_UniqueIds']=='BB']
 
 
-# In[158]:
-
-
-dffk4 = dfk_nontrade[dfk_nontrade['ViewData.Side0_UniqueIds']=='AA']
-dffk5 = dfk_nontrade[dfk_nontrade['ViewData.Side1_UniqueIds']=='BB']
-
-
 # #### Geneva side
-
-# In[160]:
-
 
 def canceltrade(x,y):
     if x =='buy' and y>0:
@@ -3275,15 +1888,17 @@ def canceltrade(x,y):
         k = 0
     return k
 
-
-# In[161]:
-
-
 dffk3['cancel_marker'] = dffk3.apply(lambda x : canceltrade(x['ViewData.Transaction Type1'],x['ViewData.Accounting Net Amount']), axis = 1)
 
+dffk3[dffk3['cancel_marker'] == 1]['ViewData.Transaction ID'].nunique()
 
-# In[163]:
+cancel_trade = list(set(dffk3[dffk3['cancel_marker'] == 1]['ViewData.Transaction ID']))
 
+# - Segegation of canceltrade with comment
+
+original = dffk3[dffk3['ViewData.Transaction ID'].isin(cancel_trade)]
+
+original['predicted category'] = 'Original of Cancelled trade'
 
 def cancelcomment(x,y):
     com1 = 'This is original of cancelled trade with tran id'
@@ -3291,9 +1906,12 @@ def cancelcomment(x,y):
     com = com1 + ' ' +  str(x) + ' ' + com2 + str(y)
     return com
 
+#TODO : Look into how to resolve empty created dataframes :  Below code line gave error due to empty dataframe named original
+original['predicted comment'] = original.apply(lambda x : cancelcomment(x['ViewData.Transaction ID'],x['ViewData.Settle Date1']), axis = 1)
 
-# In[164]:
+cancellation = dffk3[dffk3['cancel_marker'] == 1]
 
+cancellation['predicted category'] = 'Cancelled trade'
 
 def cancelcomment1(x,y):
     com1 = 'This is cancelled trade with tran id'
@@ -3301,52 +1919,64 @@ def cancelcomment1(x,y):
     com = com1 + ' ' +  str(x) + ' ' + com2 + str(y)
     return com
 
+#TODO : Look into how to resolve empty created dataframes :  Below code line gave error due to empty dataframe named cancellation
+cancellation['predicted comment'] =  cancellation.apply(lambda x : cancelcomment1(x['ViewData.Transaction ID'],x['ViewData.Settle Date1']), axis = 1)
 
-# In[165]:
+cancel_fin = pd.concat([original,cancellation])
 
+sel_col_1 = ['final_ID','predicted category','predicted comment']
 
-if dffk3[dffk3['cancel_marker'] == 1].shape[0]!=0:
-    cancel_trade = list(set(dffk3[dffk3['cancel_marker'] == 1]['ViewData.Transaction ID']))
-    if len(cancel_trade)>0:
-        km = dffk3[dffk3['cancel_marker'] != 1]
-        original = km[km['ViewData.Transaction ID'].isin(cancel_trade)]
-        original['predicted category'] = 'Original of Cancelled trade'
-        original['predicted comment'] = original.apply(lambda x : cancelcomment(x['ViewData.Transaction ID'],x['ViewData.Settle Date1']), axis = 1)
-        cancellation = dffk3[dffk3['cancel_marker'] == 1]
-        cancellation['predicted category'] = 'Cancelled trade'
-        cancellation['predicted comment'] =  cancellation.apply(lambda x : cancelcomment1(x['ViewData.Transaction ID'],x['ViewData.Settle Date1']), axis = 1)
-        cancel_fin = pd.concat([original,cancellation])
-        sel_col_1 = ['final_ID','ViewData.Side0_UniqueIds','ViewData.Side1_UniqueIds','predicted category','predicted comment']
-        cancel_fin = cancel_fin[sel_col_1]
-        cancel_fin.to_csv('Comment file soros 2 sep testing p1.csv')
-        comment_df_final_list.append(cancel_fin)
-        dffk3 = dffk3[~dffk3['ViewData.Transaction ID'].isin(cancel_trade)]
-        
-    else:
-        cancellation = dffk3[dffk3['cancel_marker'] == 1]
-        cancellation['predicted category'] = 'Cancelled trade'
-        cancellation['predicted comment'] =  cancellation.apply(lambda x : cancelcomment1(x['ViewData.Transaction ID'],x['ViewData.Settle Date1']), axis = 1)
-        cancel_fin = pd.concat([original,cancellation])
-        sel_col_1 = ['final_ID','ViewData.Side0_UniqueIds','ViewData.Side1_UniqueIds','predicted category','predicted comment']
-        cancel_fin = cancel_fin[sel_col_1]
-        cancel_fin.to_csv('Comment file soros 2 sep testing no original p2.csv')
-        comment_df_final_list.append(cancel_fin)
-        dffk3 = dffk3[~dffk3['ViewData.Transaction ID'].isin(cancel_trade)]
-else:
-    dffk3 = dffk3.copy()
-        
-        
+#TODO : Look into how to resolve empty created dataframes :  Below code line gave error due to empty dataframe named cancel_fin
+cancel_fin = cancel_fin[sel_col_1]
+cancel_fin.to_csv('Comment file oaktree 2 sep testing p1.csv')
 
 
+# - Moving Forward
+dffk3 = dffk3[~dffk3['ViewData.Transaction ID'].isin(cancel_trade)]
 # #### Broker side
-
-# In[166]:
-
 
 dffk2['cancel_marker'] = dffk2.apply(lambda x : canceltrade(x['ViewData.Transaction Type1'],x['ViewData.Cust Net Amount']), axis = 1)
 
+#TODO : Note that dummy dataframe below has 0 rows
+dummy = dffk2[dffk2['cancel_marker']==1]
 
-# In[168]:
+dummy1 = dffk2[dffk2['cancel_marker']!=1]
+
+pool =[]
+key_index =[]
+training_df =[]
+call1 = []
+
+appended_data = []
+
+no_pair_ids = []
+#max_rows = 5
+
+k = list(set(list(set(dummy['ViewData.Task Business Date1']))))
+k1 = k
+
+for d in tqdm(k1):
+    aa1 = dummy[dummy['ViewData.Task Business Date1']==d]
+    bb1 = dummy1[dummy1['ViewData.Task Business Date1']==d]
+    aa1['marker'] = 1
+    bb1['marker'] = 1
+    
+    aa1 = aa1.reset_index()
+    aa1 = aa1.drop('index',1)
+    bb1 = bb1.reset_index()
+    bb1 = bb1.drop('index', 1)
+    print(aa1.shape)
+    print(bb1.shape)
+    
+    aa1.columns = ['SideB.' + x  for x in aa1.columns] 
+    bb1.columns = ['SideA.' + x  for x in bb1.columns]
+    
+    cc1 = pd.merge(aa1,bb1, left_on = 'SideB.marker', right_on = 'SideA.marker', how = 'outer')
+    appended_data.append(cc1)
+    print(cc1.shape)
+
+#TODO : appended_data is empty list. So we get error for below line of code
+cancel_broker = pd.concat(appended_data)
 
 
 def amountelim(row):
@@ -3409,122 +2039,63 @@ def amountelim(row):
         k = 0
         
     return a, b, c ,d, e,f,g,h,i,j,k
-    
-        
 
+#TODO : Below 3 lines of code gives error as cancel_broker is not defined as appended_data was empty
+cancel_broker[['map_match','amt_match','fund_match','curr_match','sd_match','ttype_match','Qnt_match','isin_match','cusip_match','ticker_match','Invest_id']] = cancel_broker.apply(lambda row : amountelim(row), axis = 1,result_type="expand")
 
-# In[169]:
+cancel_broker['key_match_sum'] = cancel_broker['map_match'] + cancel_broker['sd_match'] + cancel_broker['curr_match'] + cancel_broker['ttype_match'] + cancel_broker['Qnt_match'] + + cancel_broker['isin_match'] + + cancel_broker['cusip_match']
 
+elim1 = cancel_broker[(cancel_broker['map_match']==1) & (cancel_broker['curr_match']==1)  & ((cancel_broker['isin_match']==1) |(cancel_broker['cusip_match']==1)| (cancel_broker['ticker_match']==1) | (cancel_broker['Invest_id']==1))]
 
-from pandas import merge
-from tqdm import tqdm
+id_listB = list(set(dummy['final_ID'])) 
 
+#TODO : Below line of code gives error as elim1 is not defined as cancel_broker is not defined as appended_data was empty
+id_listA = list(set(elim1['SideA.final_ID']))
 
-# In[170]:
+c1 = dummy
 
+#TODO : Below line of code gives error as idlist! is not defined as elim1 is not defined as cancel_broker is not defined as appended_data was empty
 
-def cancelcomment2(y):
+c2 = dummy1[dummy1['final_ID'].isin(id_listA)]
+
+c1['predicted category'] = 'Original of Cancelled trade'
+c1['predicted category'] = 'Original of Cancelled trade'
+
+def cancelcomment(y):
     com1 = 'This is original of cancelled trade'
     com2 = 'on settle date'
     com = com1 + ' '  + com2 +' ' + str(y)
     return com
 
-
-# In[171]:
-
-
-def cancelcomment3(y):
-    com1 = 'This is cancelled trade'
+def cancelcomment1(y):
+    com1 = 'This is cancelled trade with tran id'
     com2 = 'on settle date'
     com = com1 + ' ' + com2 + ' ' + str(y)
     return com
 
+#TODO : Below 2 lines of code give error due to empty c1 and c2
+c1['predicted comment'] =  c1.apply(lambda x : cancelcomment(x['ViewData.Settle Date1']))
 
-# In[172]:
+c2['predicted comment'] = c2.apply(lambda x : cancelcomment(x['ViewData.Settle Date1']))
+
+cancel_fin = pd.concat([c1,c2])
+
+sel_col_1 = ['final_ID','predicted category','predicted comment']
+
+#TODO : Below line of code give error due to empty cancel_fin
+cancel_fin = cancel_fin[sel_col_1]
+cancel_fin.to_csv('Comment file oaktree 2 sep testing p2.csv')
 
 
-if dffk2[dffk2['cancel_marker'] == 1].shape[0]!=0:
-    dummy = dffk2[dffk2['cancel_marker']!=1]
-    dummy1 = dffk2[dffk2['cancel_marker']==1]
+# - Moving ahead with transactions
 
+#TODO : Below line of code give error due to empty id_listA
+cancel_trade2 = id_listB+ id_listA
 
-    pool =[]
-    key_index =[]
-    training_df =[]
-    call1 = []
-
-    appended_data = []
-
-    no_pair_ids = []
-#max_rows = 5
-
-    k = list(set(list(set(dummy['ViewData.Task Business Date1']))))
-    k1 = k
-
-    for d in tqdm(k1):
-        aa1 = dummy[dummy['ViewData.Task Business Date1']==d]
-        bb1 = dummy1[dummy1['ViewData.Task Business Date1']==d]
-        aa1['marker'] = 1
-        bb1['marker'] = 1
-    
-        aa1 = aa1.reset_index()
-        aa1 = aa1.drop('index',1)
-        bb1 = bb1.reset_index()
-        bb1 = bb1.drop('index', 1)
-        #print(aa1.shape)
-        #print(bb1.shape)
-    
-        aa1.columns = ['SideB.' + x  for x in aa1.columns] 
-        bb1.columns = ['SideA.' + x  for x in bb1.columns]
-    
-        cc1 = pd.merge(aa1,bb1, left_on = 'SideB.marker', right_on = 'SideA.marker', how = 'outer')
-        appended_data.append(cc1)
-        cancel_broker = pd.concat(appended_data)
-        cancel_broker[['map_match','amt_match','fund_match','curr_match','sd_match','ttype_match','Qnt_match','isin_match','cusip_match','ticker_match','Invest_id']] = cancel_broker.apply(lambda row : amountelim(row), axis = 1,result_type="expand")
-        elim1 = cancel_broker[(cancel_broker['map_match']==1) & (cancel_broker['curr_match']==1)  & ((cancel_broker['isin_match']==1) |(cancel_broker['cusip_match']==1)| (cancel_broker['ticker_match']==1) | (cancel_broker['Invest_id']==1))]
-        if elim1.shape[0]!=0:
-            id_listA = list(set(elim1['SideA.final_ID']))
-            c1 = dummy
-            c2 = dummy1[dummy1['final_ID'].isin(id_listA)]
-            c1['predicted category'] = 'Cancelled trade'
-            c2['predicted category'] = 'Original of Cancelled trade'
-            c1['predicted comment'] =  c1.apply(lambda x : cancelcomment2(x['ViewData.Settle Date1']),axis = 1)
-            c2['predicted comment'] = c2.apply(lambda x : cancelcomment3(x['ViewData.Settle Date1']), axis = 1)
-            cancel_fin = pd.concat([c1,c2])
-            cancel_fin = cancel_fin.reset_index()
-            cancel_fin = cancel_fin.drop('index', axis = 1)
-            sel_col_1 = ['final_ID','ViewData.Side0_UniqueIds','ViewData.Side1_UniqueIds','predicted category','predicted comment']
-            cancel_fin = cancel_fin[sel_col_1]
-            comment_df_final_list.append(cancel_fin)
-            cancel_fin.to_csv('Comment file soros 2 sep testing p3.csv')
-            id_listB = list(set(c1['final_ID']))
-            comb = id_listB + id_listA
-            dffk2 = dffk2[~dffk2['final_ID'].isin(comb)]
-            
-            
-            
-   
-        
-    else:
-        c1 = dummy
-        c1['predicted category'] = 'Cancelled trade'
-        c1['predicted comment'] =  c1.apply(lambda x : cancelcomment2(x['ViewData.Settle Date1']),axis = 1)
-        sel_col_1 = ['final_ID','ViewData.Side0_UniqueIds','ViewData.Side1_UniqueIds','predicted category','predicted comment']
-        cancel_fin = c1[sel_col_1]
-        comment_df_final_list.append(cancel_fin)
-        cancel_fin.to_csv('Comment file soros 2 sep testing no original p4.csv')
-        id_listB = list(set(c1['final_ID']))
-        comb = id_listB
-        dffk2 = dffk2[~dffk2['final_ID'].isin(comb)]
-        
-else:
-    dffk2 = dffk2.copy()
-
+#TODO : Below line of code give error due to empty cancel_trade2
+dffk2 = dffk2[~dffk2['final_ID'].isin(cancel_trade2)]
 
 # #### Finding Pairs in Up and down
-
-# In[173]:
-
 
 sel_col = ['ViewData.Currency', 
        'ViewData.Accounting Net Amount', 'ViewData.Age', 'ViewData.Asset Type Category1',
@@ -3539,7 +2110,7 @@ sel_col = ['ViewData.Currency',
        'ViewData.InternalComment3', 'ViewData.Investment ID',
        'ViewData.Investment Type1', 
        'ViewData.ISIN', 'ViewData.Keys', 
-       'ViewData.Mapped Custodian Account', 'ViewData.Department',
+       'ViewData.Mapped Custodian Account', 
        
         'ViewData.Portfolio ID',
        'ViewData.Portolio', 'ViewData.Price', 'ViewData.Prime Broker1',
@@ -3558,48 +2129,14 @@ sel_col = ['ViewData.Currency',
         'ViewData.Task Business Date1',
        'ViewData.Settle Date1', 'ViewData.Trade Date1',
        'ViewData.SettlevsTrade Date', 'ViewData.SettlevsTask Date',
-       'ViewData.TaskvsTrade Date','new_desc_cat', 'ViewData.Custodian', 'ViewData.Net Amount Difference Absolute', 'new_pb1'
+       'ViewData.TaskvsTrade Date'
       ]
-
-
-# In[174]:
-
 
 dff4 = dffk2[sel_col]
 dff5 = dffk3[sel_col]
 
-
-# In[175]:
-
-
-dff6 = dffk4[sel_col]
-dff7 = dffk5[sel_col]
-
-
-# In[176]:
-
-
-dff4 = pd.concat([dff4,dff6])
-dff4 = dff4.reset_index()
-dff4 = dff4.drop('index', axis = 1)
-
-
-# In[177]:
-
-
-dff5 = pd.concat([dff5,dff7])
-dff5 = dff5.reset_index()
-dff5 = dff5.drop('index', axis = 1)
-
-
 # #### M cross N code
-
-# In[178]:
-
-
 ###################### loop 3 ###############################
-from pandas import merge
-from tqdm import tqdm
 
 pool =[]
 key_index =[]
@@ -3632,17 +2169,13 @@ for d in tqdm(k1):
     
     cc1 = pd.merge(aa1,bb1, left_on = 'SideB.marker', right_on = 'SideA.marker', how = 'outer')
     appended_data.append(cc1)
- 
-
-
-# In[179]:
-
+    print(cc1.shape)
 
 df_213_1 = pd.concat(appended_data)
 
-
-# In[180]:
-
+# ### Elimination Round 1 : Important key with Amount
+#TODO : We just created df_213_1 above. If we rewrite on it, whats the point of creating it earlier? Ask Abhijeet. Also cancel_broker was empty, so below line also gave error
+df_213_1 = cancel_broker.copy()
 
 def amountelim(row):
    
@@ -3680,34 +2213,126 @@ def amountelim(row):
         
     return a, b, c ,d, e,f
     
-        
-   
-    
-
-
-# In[181]:
-
-
 df_213_1[['map_match','amt_match','fund_match','curr_match','sd_match','ttype_match']] = df_213_1.apply(lambda row : amountelim(row), axis = 1,result_type="expand")
-
-
-# In[182]:
-
 
 df_213_1['key_match_sum'] = df_213_1['map_match'] + df_213_1['sd_match'] + df_213_1['curr_match']
 
+# #### Inclusion of the fuzz matches
 
-# In[183]:
+# #### Inclusion of the fuzz matches
+
+# In[82]:
 
 
+#ttype_soros = pd.read_csv('Soros for preprocess1/inzi training file/UMR ttype oaktree.csv')
+
+
+# In[83]:
+
+
+#ttype_combo_soros = list(ttype_soros['combined'])
+
+
+# In[330]:
+
+def ttype_match(a,b):
+    if ((type(a)==float) | (type(b)==float)):
+        if a==b:
+            return 1
+        else:
+            return 0
+    else:
+        a = a.lower()
+        b = b.lower()
+        if a==b:
+            return 1
+        else:
+            d = str(a)+str(b)
+            e = str(b)+str(a)
+        #print(d)
+            if ((d in ttype_combo_soros) | (e in ttype_combo_soros)):
+                return 1
+            else:
+                return 0
+            return 0
+
+#TODO : Below line of code gives following error
+#        if ((d in ttype_combo_soros) | (e in ttype_combo_soros)):
+#    NameError: ("name 'ttype_combo_soros' is not defined", 'occurred at index 50') for below code
+#NOTE : We have commented out ttype_combo_soros df. Do we have to do it? Also, if we have to do it, then get the file from Abhijeet in line 2226
+
+df_213_1['ttype_match_bool'] = df_213_1.apply(lambda x : ttype_match(x['SideA.ViewData.Transaction Type1'],x['SideB.ViewData.Transaction Type1']), axis = 1)
+
+#TODO : Get this file from Abhijeet
+itype_soros = pd.read_csv('UMR Itype oaktree.csv')
+
+itype_combo_soros = list(set(itype_soros['combined']))
+
+a = []
+for item in itype_combo_soros:
+    if type(item) == float:
+        item = item
+    else:
+        item = item.lower()
+    a.append(item)
+    
+def itype_match(a,b):
+    if ((type(a)==float) | (type(b)==float)):
+        if a==b:
+            return 1
+        else:
+            return 0
+    else:
+        a = a.lower()
+        b = b.lower()
+        if a==b:
+            return 1
+        else:
+            d = str(a)+str(b)
+            e = str(b)+str(a)
+        #print(d)
+            if ((d in itype_combo_soros) | (e in itype_combo_soros)):
+                return 1
+            else:
+                return 0
+
+#TODO : df_213_1 does not have column SideA.ViewData.Investment Type, but SideA.ViewData.Investment Type1. Do we have to use the latter, cause otherwise it gives an error
+#NOTE : I changed to latter and moved ahead
+df_213_1['itype_match_bool'] = df_213_1.apply(lambda x : itype_match(x['SideA.ViewData.Investment Type'],x['SideB.ViewData.Investment Type']), axis = 1)
+
+asset_soros = pd.read_csv('UMR Asset oaktree.csv')
+
+asset_combo_soros = list(set(asset_soros['combined']))
+
+def asset_match(a,b):
+    if ((type(a)==float) | (type(b)==float)):
+        if a==b:
+            return 1
+        else:
+            return 0
+    else:
+        a = a.lower()
+        b = b.lower()
+        if a==b:
+            return 1
+        else:
+            d = str(a)+str(b)
+            e = str(b)+str(a)
+        #print(d)
+            if ((d in asset_combo_soros) | (e in asset_combo_soros)):
+                return 1
+            else:
+                return 0
+
+#TODO : df_213_1 does not have column SideA.ViewData.Asset Type Category, but SideA.ViewData.Asset Type Category1. Do we have to use the latter, cause otherwise it gives an error
+#NOTE : I changed to latter and moved ahead
+
+df_213_1['asset_match_bool'] = df_213_1.apply(lambda x : asset_match(x['SideA.ViewData.Asset Type Category'],x['SideB.ViewData.Asset Type Category']), axis = 1)
+
+#TODO : NOTE : elim1 has 0 rows.
 elim1 = df_213_1[(df_213_1['amt_match']==1) & (df_213_1['key_match_sum']>=2)]
 
-
 # - putting updown comments
-
-# In[190]:
-
-
 def updownat(a,b,c,d,e):
     if a == 0:
         k = 'mapped custodian account'
@@ -3715,203 +2340,151 @@ def updownat(a,b,c,d,e):
         k = 'currency'
     elif c ==0 :
         k = 'Settle Date'
+        
     elif d == 0:
-        k = 'fund'    
-    elif e == 0:
-        k = 'transaction type'
-    else :
         k = 'Investment type'
+    else :
+        k = 'transaction type'
         
     com = 'up/down at'+ ' ' + k
     return com
 
+#TODO : NOTE : cancel, frames, c1, c2, id_listA and id_listB are all empty lists as elim1 has 0 rows.
+id_listB = list(set(elim1['SideB.final_ID'])) 
+id_listA = list(set(elim1['SideA.final_ID']))
 
-# In[191]:
+c1 = dffk2[dffk2['final_ID'].isin(id_listB)]
+c2 = dffk3[dffk3['final_ID'].isin(id_listA)]
 
+c1['predicted category'] = 'updown'
+c2['predicted category'] = 'updown'
 
-if elim1.shape[0]!=0:
-    elim1['SideA.predicted category'] = 'Updown'
-    elim1['SideB.predicted category'] = 'Updown'
-    elim1['SideA.predicted comment'] = elim1.apply(lambda x : updownat(x['map_match'],x['curr_match'],x['sd_match'],x['fund_match'],x['ttype_match']), axis = 1)
-    elim1['SideB.predicted comment'] = elim1.apply(lambda x : updownat(x['map_match'],x['curr_match'],x['sd_match'],x['fund_match'],x['ttype_match']), axis = 1)
-    elim_col = ['final_ID','ViewData.Side0_UniqueIds','ViewData.Side1_UniqueIds','predicted category','predicted comment']
-    
-    sideA_col = []
-    sideB_col = []
-#    elim_col = list(elim1.columns)
+c1['predicted comment'] = 'updown'
+c2['predicted category'] = 'updown'
 
-    for items in elim_col:
-        item = 'SideA.'+items
-        sideA_col.append(item)
-        item = 'SideB.'+items
-        sideB_col.append(item)
-        
-    elim2 = elim1[sideA_col]
-    elim3 = elim1[sideB_col]
-    
-    elim2 = elim2.rename(columns= {'SideA.final_ID':'final_ID',
-                              'SideA.ViewData.Side0_UniqueIds' : 'ViewData.Side0_UniqueIds',
-                              'SideA.ViewData.Side1_UniqueIds' : 'ViewData.Side1_UniqueIds',
-                              'SideA.predicted category':'predicted category',
-                              'SideA.predicted comment':'predicted comment'})
-    elim3 = elim3.rename(columns= {'SideB.final_ID':'final_ID',
-                              'SideB.ViewData.Side0_UniqueIds' : 'ViewData.Side0_UniqueIds',
-                              'SideB.ViewData.Side1_UniqueIds' : 'ViewData.Side1_UniqueIds',                                   
-                              'SideB.predicted category':'predicted category',
-                              'SideB.predicted comment':'predicted comment'})
-    frames = [elim2,elim3]
-    elim = pd.concat(frames)
-    elim = elim.reset_index()
-    elim = elim.drop('index', axis = 1)
-    elim.to_csv('Comment file soros 2 sep testing p5.csv')
-    comment_df_final_list.append(elim)
-    
-    id_listB = list(set(elim1['SideB.final_ID'])) 
-    id_listA = list(set(elim1['SideA.final_ID']))
-    
-    df_213_1 = df_213_1[~df_213_1['SideB.final_ID'].isin(id_listB)]
-    df_213_1 = df_213_1[~df_213_1['SideA.final_ID'].isin(id_listA)]
-    
-    id_listB = list(set(df_213_1['SideB.final_ID'])) 
-    id_listA = list(set(df_213_1['SideA.final_ID']))
-    
-    dff4 = dff4[dff4['final_ID'].isin(id_listB)]
-    dff5 = dff5[dff5['final_ID'].isin(id_listA)]
-    
-else:
-    dff4 = dff4.copy()
-    dff5 = dff5.copy()
-    
+frames = [c1,c2]
 
+cancel = pd.concat(frames)
 
-# In[192]:
+cancel.to_csv('Comment file oaktree 2 sep testing p3.csv')
 
+#TODO : NOTE : id_listA and id_listB are all empty lists as elim1 has 0 rows.
 
-frames = [dff4,dff5]
+id_listB = list(set(elim1['SideB.final_ID'])) 
+id_listA = list(set(elim1['SideA.final_ID']))
 
+df_213_1 = df_213_1[~df_213_1['SideB.final_ID'].isin(id_listB)]
+df_213_1 = df_213_1[~df_213_1['SideA.final_ID'].isin(id_listA)]
 
-# In[193]:
+# #### Round 2 Elimination : Opposite Sign
 
-
-data = pd.concat(frames)
-data = data.reset_index()
-data = data.drop('index', axis = 1)
-
-
-# In[196]:
-
-
-data['ViewData.Settle Date'] = pd.to_datetime(data['ViewData.Settle Date'])
-
-
-# In[197]:
-
-
-days = [1,30,31,29]
-data['monthend marker'] = data['ViewData.Settle Date'].apply(lambda x : 1 if x.day in days else 0)
-
-
-# In[198]:
-
-
-data['ViewData.Commission'] = data['ViewData.Commission'].fillna('NA')
-
-
-# In[199]:
-
-
-def comfun(x):
-    if x=="NA":
-        k = 'NA'
-       
-    elif x == 0.0:
-        k = 'zero'
-    else:
-        k = 'positive'
+def opposignelim(row):
    
-    return k
+    if (abs(row['SideB.ViewData.Cust Net Amount']) == abs(row['SideA.ViewData.Accounting Net Amount'])):
+        b = 1
+    else:
+        b = 0
+    return b
 
+#
+## In[524]:
+#
+#
+#df_213_1['amt_abs_match'] = df_213_1.apply(lambda row : opposignelim(row), axis = 1)
+#
+#
+## In[526]:
+#
+#
+#dummy = df_213_1[(df_213_1['amt_abs_match']==1) & (df_213_1['key_match_sum']>=2) & (df_213_1['ttype_match']==1)]
+#
+#
+## In[527]:
+#
+#
+#
+#
+## In[177]:
+#
+#
+#dummy = df_213_1[(df_213_1['amt_abs_match']==1) & (df_213_1['key_match_sum']>=2)]
+#
+#
+## In[178]:
+#
+#
+#
+def itype_match(a,b):
+    if ((type(a)==float) | (type(b)==float)):
+        if a==b:
+            return 1
+        else:
+            return 0
+    else:
+        a = a.lower()
+        b = b.lower()
+        if a==b:
+            return 1
+        else:
+            d = str(a)+str(b)
+            e = str(b)+str(a)
+        #print(d)
+            if ((d in a) | (e in a)):
+                return 1
+            else:
+                return 0
 
-# In[200]:
+#dummy['new_itype_match'] = dummy.apply(lambda x : itype_match(x['SideA.ViewData.Investment Type'],x['SideB.ViewData.Investment Type']), axis = 1)
+#dummy = df_213_1[(df_213_1['amt_elim']==1)]
+#id_listB = list(set(dummy['SideB.final_ID'])) 
+#id_listA = list(set(dummy['SideA.final_ID']))
 
+df_213_1 = df_213_1[~df_213_1['SideB.final_ID'].isin(id_listB)]
+df_213_1 = df_213_1[~df_213_1['SideA.final_ID'].isin(id_listA)]
 
-data['comm_marker'] = data['ViewData.Commission'].apply(lambda x : comfun(x))
+id_listB = list(set(df_213_1['SideB.final_ID'])) 
+id_listA = list(set(df_213_1['SideA.final_ID']))
 
+dff4 = dff4[dff4['final_ID'].isin(id_listB)]
+dff5 = dff5[dff5['final_ID'].isin(id_listA)]
 
-# In[201]:
+# ### Comment Categorisation using model
+data = dff4.append(dff5)
 
-
+#TODO : Below line of code has error. 'data' does not have new_pb1 column below. 
 data['new_pb2'] = data.apply(lambda x : 'Geneva' if x['ViewData.Side0_UniqueIds'] != 'AA' else x['new_pb1'], axis = 1)
 
-
-# In[202]:
-
-
-Pre_final = [
-    
+Pre_final = [    
 'ViewData.Side0_UniqueIds','ViewData.Side1_UniqueIds','ViewData.BreakID',
- 
-
-
  'ViewData.Currency',
  'ViewData.Custodian',
-     'ViewData.ISIN',
-
+ 'ViewData.ISIN',
  'ViewData.Mapped Custodian Account',
- 
  'ViewData.Net Amount Difference Absolute',
- 
  'ViewData.Portolio',
  'ViewData.Settle Date',
- 
  'ViewData.Trade Date',
  'ViewData.Transaction Type1',
-'new_desc_cat',
-    'ViewData.Department',
-
- 
- 
- 
+ 'new_desc_cat',
  'ViewData.Accounting Net Amount',
  'ViewData.Asset Type Category1',
- 
- 
  'ViewData.CUSIP',
  'ViewData.Commission',
- 
  'ViewData.Fund',
- 
- 
  'ViewData.Investment ID',
  'ViewData.Investment Type1',
- 
- 
  'ViewData.Price',
  'ViewData.Prime Broker1',
-
  'ViewData.Quantity',
- 
-'ViewData.InternalComment2', 'ViewData.Description','new_pb2','new_pb1','comm_marker','monthend marker'
-   
- 
-]
-
-
-# In[203]:
-
-
+ 'ViewData.InternalComment2', 'ViewData.Description','new_pb2','new_pb1',
+  'Category'
+ ]
+#TODO : Below line of code has error : ['new_pb1', 'Category', 'ViewData.Custodian', 'new_desc_cat', 'new_pb2', 'ViewData.Net Amount Difference Absolute'] not in index
 data = data[Pre_final]
-
-
-# In[204]:
-
 
 df_mod1 = data.copy()
 
-
-# In[205]:
-
-
+#TODO : Below line of code has error. 'data' does not have ViewData.Custodian column below. 
 df_mod1['ViewData.Custodian'] = df_mod1['ViewData.Custodian'].fillna('AA')
 df_mod1['ViewData.Portolio'] = df_mod1['ViewData.Portolio'].fillna('bb')
 df_mod1['ViewData.Settle Date'] = df_mod1['ViewData.Settle Date'].fillna(0)
@@ -3931,14 +2504,14 @@ df_mod1['ViewData.Quantity'] = df_mod1['ViewData.Quantity'].fillna(0)
 df_mod1['ViewData.Commission'] = df_mod1['ViewData.Commission'].fillna(0)
 df_mod1['ViewData.Transaction Type1'] = df_mod1['ViewData.Transaction Type1'].fillna('kk')
 df_mod1['ViewData.ISIN'] = df_mod1['ViewData.ISIN'].fillna('mm')
+
+#TODO : Below line of code has error. 'data' does not have new_desc_cat column below. 
 df_mod1['new_desc_cat'] = df_mod1['new_desc_cat'].fillna('nn')
-#df_mod1['Category'] = df_mod1['Category'].fillna('NA')
+
+#TODO : Below line of code has error. 'data' does not have Category column below. 
+df_mod1['Category'] = df_mod1['Category'].fillna('NA')
+
 df_mod1['ViewData.Description'] = df_mod1['ViewData.Description'].fillna('nn')
-df_mod1['ViewData.Department'] = df_mod1['ViewData.Department'].fillna('nn')
-
-
-# In[206]:
-
 
 def fid(a,b):
    
@@ -3947,95 +2520,44 @@ def fid(a,b):
     else:
         return b
 
-
-# In[207]:
-
-
 df_mod1['final_ID'] = df_mod1.apply(lambda row: fid(row['ViewData.Side0_UniqueIds'],row['ViewData.Side1_UniqueIds']),axis =1)
-
-
-# In[208]:
-
-
 data2 = df_mod1.copy()
 
 
-# ### Separate Prediction of the Trade and Non trade
-
-# #### 1st for Non Trade
-
-# In[209]:
-
-
-trade_types = ['buy','sell','cover short', 'sell short', 'forward', 'forwardfx', 'spotfx']
-
-
-# In[210]:
-
-
-data21 = data2[~data2['ViewData.Transaction Type1'].isin(trade_types)]
-
-
-# In[211]:
-
-
-cols = [
- 
-
-
+# #### Separate Prediction of the Trade and Non trade
+data21 = data2.copy()
+cols = [ 
  'ViewData.Transaction Type1',
- 
- 
-
  'ViewData.Asset Type Category1',
-
  'new_desc_cat',
-
  'ViewData.Investment Type1',
- 
+ 'new_pb2','new_pb1'
+ ]
 
- 'new_pb2','new_pb1','comm_marker','monthend marker'
- 
- 
-              
-             ]
-
-
-# In[212]:
-
-
+#TODO : Below line of code has error :  KeyError: "['new_pb1', 'new_pb2', 'new_desc_cat'] not in index"
 data211 = data21[cols]
 
-
-# In[213]:
-
-filename = 'finalized_model_soros_non_trade_v9.sav'
-
-
-# In[214]:
-
-
-import pickle
-
-
-# In[215]:
-
-
+filename = 'finalized_model_oaktree_trade_v2.sav'
 clf = pickle.load(open(filename, 'rb'))
 
-
-# In[216]:
-
-
+#TODO : Evertyhing below has error : NameError: name 'data211' is not defined
+X_test = data211.copy()
 # Actual class predictions
-cb_predictions = clf.predict(data211)#.astype(str)
+cb_predictions = clf.predict(X_test)#.astype(str)
+
 # Probabilities for each class
 #cb_probs = clf.predict_proba(X_test)[:, 1]
 
 
-# #### Testing of Model and final prediction file - Non Trade
+# #### Testing of Model and final prediction file
 
-# In[217]:
+# In[ ]:
+
+
+#print(metrics.classification_report(y_test,cb_predictions, digits=3))
+
+
+# In[ ]:
 
 
 demo = []
@@ -4043,215 +2565,38 @@ for item in cb_predictions:
     demo.append(item[0])
 
 
-# In[218]:
+# In[ ]:
 
+#
+#list1 = list(y_test)
+#
+#
+## In[ ]:
+#
+#
+#X_test1 = data21.drop(['Category'],axis = 1)
+#y_test1 = data21['Category'] 
+#
+#
+## In[ ]:
+#
 
-result_non_trade =data21.copy()
-
-
-# In[219]:
-
-
-result_non_trade = result_non_trade.reset_index()
-
-
-# In[220]:
-
-
-result_non_trade['predicted category'] = pd.Series(demo)
-result_non_trade['predicted comment'] = 'NA'
-
-
-# In[229]:
-
-
-result_non_trade = result_non_trade.drop('predicted comment', axis = 1)
-
-
-# In[249]:
-
-
-com_temp = pd.read_csv('Soros comment template for delivery.csv')
-
-
-# In[250]:
-
-
-com_temp = com_temp.rename(columns = {'Category ':'predicted category','template':'predicted template'})
-
-
-# In[252]:
-
-
-result_non_trade = pd.merge(result_non_trade,com_temp,on = 'predicted category',how = 'left')
-
-
-# In[256]:
-
-
-def comgen(x,y,z,k):
-    if x == 'Geneva':
-        
-        com = k + ' ' +y + ' ' + str(z)
-    else:
-        com = "Geneva" + ' ' +y + ' ' + str(z)
-        
-    return com
-
-
-# In[257]:
-
-
-result_non_trade['predicted comment'] = result_non_trade.apply(lambda x : comgen(x['new_pb2'],x['predicted template'],x['ViewData.Settle Date'],x['new_pb1']), axis = 1)
+result = X_test.copy()
 
 
 # In[ ]:
 
 
-result_non_trade = result_non_trade[['final_ID','ViewData.Side0_UniqueIds','ViewData.Side1_UniqueIds','predicted category','predicted comment']]
-
-
-# In[260]:
-
-
-result_non_trade.to_csv('Comment file soros 2 sep testing p6.csv')
-comment_df_final_list.append(result_non_trade)
-
-# #### For Trade Model
-
-# In[261]:
-
-
-data22 = data2[data2['ViewData.Transaction Type1'].isin(trade_types)]
-
-
-# In[262]:
-
-
-data222 = data22[cols]
-
-
-# In[263]:
-
-
-filename = 'finalized_model_soros_trade_v9.sav'
-
-
-# In[264]:
-
-
-clf = pickle.load(open(filename, 'rb'))
-
-
-# In[265]:
-
-
-# Actual class predictions
-cb_predictions = clf.predict(data222)#.astype(str)
-# Probabilities for each class
-#cb_probs = clf.predict_proba(X_test)[:, 1]
-
-
-# In[266]:
-
-
-demo = []
-for item in cb_predictions:
-    demo.append(item[0])
-
-
-# In[267]:
-
-
-result_trade =data22.copy()
-
-
-# In[268]:
-
-
-result_trade = result_trade.reset_index()
-
-
-# In[269]:
-
-
-result_trade['predicted category'] = pd.Series(demo)
-result_trade['predicted comment'] = 'NA'
-
-
-# In[272]:
-
-
-result_trade = result_trade.drop('predicted comment', axis = 1)
-
-
-# In[273]:
-
-
-result_trade = pd.merge(result_trade,com_temp,on = 'predicted category',how = 'left')
-
-
-# In[274]:
-
-
-result_trade['predicted comment'] = result_trade.apply(lambda x : comgen(x['new_pb2'],x['predicted template'],x['ViewData.Settle Date'],x['new_pb1']), axis = 1)
+result = result.reset_index()
 
 
 # In[ ]:
 
 
-result_trade = result_trade[['final_ID','ViewData.Side0_UniqueIds','ViewData.Side1_UniqueIds','predicted category','predicted comment']]
+result['predicted'] = pd.Series(demo)
+#result['Actual'] = pd.Series(list1)
 
 
-# In[ ]:
+# ### Code Ends Here
 
-
-result_trade.to_csv('Comment file soros 2 sep testing p7.csv')
-comment_df_final_list.append(result_trade)
-
-comment_df_final = pd.concat(comment_df_final_list)
-
-change_col_names_comment_df_final_dict = {
-                                        'ViewData.Side0_UniqueIds' : 'Side0_UniqueIds',
-                                        'ViewData.Side1_UniqueIds' : 'Side1_UniqueIds',
-                                        'predicted category' : 'PredictedCategory',
-                                        'predicted comment' : 'PredictedComment'
-                                        }
-
-comment_df_final.rename(columns = change_col_names_comment_df_final_dict, inplace = True)
-
-comment_df_final_side0 = comment_df_final[comment_df_final['Side1_UniqueIds'] == 'BB']
-comment_df_final_side1 = comment_df_final[comment_df_final['Side0_UniqueIds'] == 'AA']
-
-final_df = final_table_to_write.merge(comment_df_final_side0, on = 'Side0_UniqueIds', how = 'left')
-final_df['PredictedComment'] = final_df['PredictedComment_y'].fillna(final_df['PredictedComment_x'])
-final_df.drop(['final_ID','PredictedComment_x','PredictedComment_y','Side1_UniqueIds_y'], axis = 1, inplace = True)
-final_df.rename(columns = {'Side1_UniqueIds_x' : 'Side1_UniqueIds'}, inplace = True)
-
-
-final_df_2 = final_df.merge(comment_df_final_side1, on = 'Side1_UniqueIds', how = 'left')
-final_df_2['PredictedComment'] = final_df_2['PredictedComment_y'].fillna(final_df_2['PredictedComment_x'])
-final_df_2.drop(['final_ID','PredictedComment_x','PredictedComment_y','Side0_UniqueIds_y'], axis = 1, inplace = True)
-final_df_2.rename(columns = {'Side0_UniqueIds_x' : 'Side0_UniqueIds'}, inplace = True)
-
-
-#End of Commenting
-
-#data_dict = final_table_to_write.to_dict("records")
-data_dict = final_df_2.to_dict("records_final")
-coll_1_for_writing_prediction_data = db_1_for_MEO_data['MLPrediction_Cash']
-coll_1_for_writing_prediction_data.insert_many(data_dict) 
-
-
-#For remaining obs, fill probability as 60 - 90
-#remaining_ob_df = pd.DataFrame()
-#remaining_ob_df[]
-#remaining_ob_df['Side0_UniqueIds']
-
-
-
-
-
-
-
-
+# In[134]:
